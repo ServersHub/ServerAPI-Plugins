@@ -1,0 +1,9 @@
+{
+  "Database":"sqlite",
+  "MysqlHost":"localhost",
+  "MysqlUser":"root",
+  "MysqlPass":"pass",
+  "MysqlDB":"arkdb",
+  "MysqlPort":3306,
+  "DbPathOverride":""
+}
