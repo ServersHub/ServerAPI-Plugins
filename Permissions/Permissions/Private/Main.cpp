@@ -391,7 +391,7 @@ namespace Permissions
 
 	// Chat commands
 
-	void ShowMyGroupsChat(AShooterPlayerController* player_controller, FString*, EChatSendMode::Type)
+	void ShowMyGroupsChat(AShooterPlayerController* player_controller, FString*, int)
 	{
 		FString eos_id;
 		player_controller->GetUniqueNetIdAsString(&eos_id);
