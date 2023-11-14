@@ -9,10 +9,8 @@ namespace Permissions::Hooks
 
 	bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlayerController* new_player, UPrimalPlayerData* player_data, AShooterCharacter* player_character, bool is_from_login)
 	{
-		FString* eos_id = nullptr;
-		eos_id = new FString("test");
-		//new_player->GetUniqueNetIdAsString(&eos_id);
-		//static_cast<AShooterPlayerState*>(new_player->PlayerStateField().Get())->GetUniqueNetIdAsString(eos_id);
+		FString eos_id;
+		new_player->GetUniqueNetIdAsString(&eos_id);
 		
 		if (!database->IsPlayerExists(*eos_id))
 		{
@@ -29,11 +27,8 @@ namespace Permissions::Hooks
 
 	void Hook_AShooterPlayerController_ClientNotifyAdmin(AShooterPlayerController* player_controller)
 	{
-		FString* eos_id = nullptr;
-		eos_id = new FString("test");
-		//player_controller->GetUniqueNetIdAsString(&eos_id);
-		//static_cast<AShooterPlayerState*>(player_controller->PlayerStateField().Get())->GetUniqueNetIdAsString(eos_id);
-
+		FString eos_id;
+		player_controller->GetUniqueNetIdAsString(&eos_id);
 
 		//if (!player_controller->ActorHasTag(TempAdmin))
 		//{

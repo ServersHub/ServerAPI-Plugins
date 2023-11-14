@@ -396,7 +396,7 @@ namespace Permissions
 		FString eos_id;
 		player_controller->GetUniqueNetIdAsString(&eos_id);
 
-		TArray<FString> groups = database->GetPlayerGroups(eos_id);
+		TArray<FString> groups = database->GetPlayerGroups(*eos_id);
 
 		FString groups_str;
 
