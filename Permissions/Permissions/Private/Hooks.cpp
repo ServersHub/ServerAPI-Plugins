@@ -7,16 +7,16 @@ namespace Permissions::Hooks
 	DECLARE_HOOK(AShooterGameMode_HandleNewPlayer, bool, AShooterGameMode*, AShooterPlayerController*, UPrimalPlayerData*, AShooterCharacter*, bool);
 	DECLARE_HOOK(AShooterPlayerController_ClientNotifyAdmin, void, AShooterPlayerController*);
 
-	bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlayerController* new_player,
-		UPrimalPlayerData* player_data, AShooterCharacter* player_character,
-		bool is_from_login)
+	bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlayerController* new_player, UPrimalPlayerData* player_data, AShooterCharacter* player_character, bool is_from_login)
 	{
-		FString eos_id;
-		new_player->GetUniqueNetIdAsString(&eos_id);
+		FString* eos_id = nullptr;
+		eos_id = new FString("test");
+		//new_player->GetUniqueNetIdAsString(&eos_id);
+		//static_cast<AShooterPlayerState*>(new_player->PlayerStateField().Get())->GetUniqueNetIdAsString(eos_id);
 		
-		if (!database->IsPlayerExists(eos_id))
+		if (!database->IsPlayerExists(*eos_id))
 		{
-			const bool res = database->AddPlayer(eos_id);
+			const bool res = database->AddPlayer(*eos_id);
 			if (!res)
 			{
 				Log::GetLog()->error("({} {}) Couldn't add player", __FILE__, __FUNCTION__);
@@ -29,16 +29,18 @@ namespace Permissions::Hooks
 
 	void Hook_AShooterPlayerController_ClientNotifyAdmin(AShooterPlayerController* player_controller)
 	{
-		FString eos_id;
-		player_controller->GetUniqueNetIdAsString(&eos_id);
+		FString* eos_id = nullptr;
+		eos_id = new FString("test");
+		//player_controller->GetUniqueNetIdAsString(&eos_id);
+		//static_cast<AShooterPlayerState*>(player_controller->PlayerStateField().Get())->GetUniqueNetIdAsString(eos_id);
 
 
 		//if (!player_controller->ActorHasTag(TempAdmin))
 		//{
-			if (!IsPlayerInGroup(eos_id, "Admins"))
+			if (!IsPlayerInGroup(*eos_id, "Admins"))
 			{
 				FString Admins("Admins");
-				database->AddPlayerToGroup(eos_id, Admins);
+				database->AddPlayerToGroup(*eos_id, Admins);
 			}
 		//}
 		//else
@@ -49,12 +51,7 @@ namespace Permissions::Hooks
 
 	void Init()
 	{
-		AsaApi::GetHooks().SetHook("AShooterGameMode.HandleNewPlayer_Implementation",
-			&Hook_AShooterGameMode_HandleNewPlayer,
-			&AShooterGameMode_HandleNewPlayer_original);
-
-		AsaApi::GetHooks().SetHook("AShooterPlayerController.ClientNotifyAdmin",
-			&Hook_AShooterPlayerController_ClientNotifyAdmin,
-			&AShooterPlayerController_ClientNotifyAdmin_original);
+		AsaApi::GetHooks().SetHook("AShooterGameMode.HandleNewPlayer_Implementation(AShooterPlayerController*,UPrimalPlayerData*,AShooterCharacter*,bool)",&Hook_AShooterGameMode_HandleNewPlayer, &AShooterGameMode_HandleNewPlayer_original);
+		AsaApi::GetHooks().SetHook("AShooterPlayerController.ClientNotifyAdmin()", &Hook_AShooterPlayerController_ClientNotifyAdmin, &AShooterPlayerController_ClientNotifyAdmin_original);
 	}
 }
