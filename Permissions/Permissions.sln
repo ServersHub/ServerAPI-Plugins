@@ -8,10 +8,13 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Ark|x64 = Ark|x64
+		Lethal|x64 = Lethal|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{356B181C-6960-46EC-86B3-2020A7E50FAF}.Ark|x64.ActiveCfg = Ark|x64
 		{356B181C-6960-46EC-86B3-2020A7E50FAF}.Ark|x64.Build.0 = Ark|x64
+		{356B181C-6960-46EC-86B3-2020A7E50FAF}.Lethal|x64.ActiveCfg = Lethal|x64
+		{356B181C-6960-46EC-86B3-2020A7E50FAF}.Lethal|x64.Build.0 = Lethal|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

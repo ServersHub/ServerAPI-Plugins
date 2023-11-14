@@ -453,25 +453,25 @@ namespace Permissions
 
 		Hooks::Init();
 
-		//AsaApi::GetCommands().AddConsoleCommand("Permissions.Add", &AddPlayerToGroupCmd);
-		//AsaApi::GetCommands().AddConsoleCommand("Permissions.Remove", &RemovePlayerFromGroupCmd);
-		//AsaApi::GetCommands().AddConsoleCommand("Permissions.AddGroup", &AddGroupCmd);
-		//AsaApi::GetCommands().AddConsoleCommand("Permissions.RemoveGroup", &RemoveGroupCmd);
-		//AsaApi::GetCommands().AddConsoleCommand("Permissions.Grant", &GroupGrantPermissionCmd);
-		//AsaApi::GetCommands().AddConsoleCommand("Permissions.Revoke", &GroupRevokePermissionCmd);
-		//AsaApi::GetCommands().AddConsoleCommand("Permissions.PlayerGroups", &PlayerGroupsCmd);
-		//AsaApi::GetCommands().AddConsoleCommand("Permissions.GroupPermissions", &GroupPermissionsCmd);
-		//AsaApi::GetCommands().AddConsoleCommand("Permissions.ListGroups", &ListGroupsCmd);
+		AsaApi::GetCommands().AddConsoleCommand("Permissions.Add", &AddPlayerToGroupCmd);
+		AsaApi::GetCommands().AddConsoleCommand("Permissions.Remove", &RemovePlayerFromGroupCmd);
+		AsaApi::GetCommands().AddConsoleCommand("Permissions.AddGroup", &AddGroupCmd);
+		AsaApi::GetCommands().AddConsoleCommand("Permissions.RemoveGroup", &RemoveGroupCmd);
+		AsaApi::GetCommands().AddConsoleCommand("Permissions.Grant", &GroupGrantPermissionCmd);
+		AsaApi::GetCommands().AddConsoleCommand("Permissions.Revoke", &GroupRevokePermissionCmd);
+		AsaApi::GetCommands().AddConsoleCommand("Permissions.PlayerGroups", &PlayerGroupsCmd);
+		AsaApi::GetCommands().AddConsoleCommand("Permissions.GroupPermissions", &GroupPermissionsCmd);
+		AsaApi::GetCommands().AddConsoleCommand("Permissions.ListGroups", &ListGroupsCmd);
 
-		//AsaApi::GetCommands().AddRconCommand("Permissions.Add", &AddPlayerToGroupRcon);
-		//AsaApi::GetCommands().AddRconCommand("Permissions.Remove", &RemovePlayerFromGroupRcon);
-		//AsaApi::GetCommands().AddRconCommand("Permissions.AddGroup", &AddGroupRcon);
-		//AsaApi::GetCommands().AddRconCommand("Permissions.RemoveGroup", &RemoveGroupRcon);
-		//AsaApi::GetCommands().AddRconCommand("Permissions.Grant", &GroupGrantPermissionRcon);
-		//AsaApi::GetCommands().AddRconCommand("Permissions.Revoke", &GroupRevokePermissionRcon);
-		//AsaApi::GetCommands().AddRconCommand("Permissions.PlayerGroups", &PlayerGroupsRcon);
-		//AsaApi::GetCommands().AddRconCommand("Permissions.GroupPermissions", &GroupPermissionsRcon);
-		//AsaApi::GetCommands().AddRconCommand("Permissions.ListGroups", &ListGroupsRcon);
+		AsaApi::GetCommands().AddRconCommand("Permissions.Add", &AddPlayerToGroupRcon);
+		AsaApi::GetCommands().AddRconCommand("Permissions.Remove", &RemovePlayerFromGroupRcon);
+		AsaApi::GetCommands().AddRconCommand("Permissions.AddGroup", &AddGroupRcon);
+		AsaApi::GetCommands().AddRconCommand("Permissions.RemoveGroup", &RemoveGroupRcon);
+		AsaApi::GetCommands().AddRconCommand("Permissions.Grant", &GroupGrantPermissionRcon);
+		AsaApi::GetCommands().AddRconCommand("Permissions.Revoke", &GroupRevokePermissionRcon);
+		AsaApi::GetCommands().AddRconCommand("Permissions.PlayerGroups", &PlayerGroupsRcon);
+		AsaApi::GetCommands().AddRconCommand("Permissions.GroupPermissions", &GroupPermissionsRcon);
+		AsaApi::GetCommands().AddRconCommand("Permissions.ListGroups", &ListGroupsRcon);
 
 		AsaApi::GetCommands().AddChatCommand("/groups", &ShowMyGroupsChat);
 	}
