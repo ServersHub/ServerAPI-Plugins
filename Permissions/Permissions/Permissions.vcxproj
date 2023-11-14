@@ -100,6 +100,9 @@
       <AdditionalLibraryDirectories>$(SolutionDir)Libs;$(SolutionDir)..\..\ServerAPI\out_lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /I  /Y "$(TargetDir)Permissions.lib" "..\out_lib\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Lethal|x64'">
     <ClCompile>
@@ -124,7 +127,9 @@
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(SolutionDir)$(ConfigurationName)Configs\*.*" "F:\ASA-Dedicated\asa-server\ShooterGame\Binaries\Win64\ArkApi\Plugins\$(ProjectName)\" /y
+      <Command>xcopy /I  /Y "$(TargetDir)Permissions.lib" "..\out_lib\"
+
+copy "$(SolutionDir)$(ConfigurationName)Configs\*.*" "F:\ASA-Dedicated\asa-server\ShooterGame\Binaries\Win64\ArkApi\Plugins\$(ProjectName)\" /y
 copy "$(SolutionDir)$(PlatformName)\$(ConfigurationName)\$(ProjectName).dll" "F:\ASA-Dedicated\asa-server\ShooterGame\Binaries\Win64\ArkApi\Plugins\$(ProjectName)\" /y
 copy "$(SolutionDir)$(PlatformName)\$(ConfigurationName)\$(ProjectName).pdb" "F:\ASA-Dedicated\asa-server\ShooterGame\Binaries\Win64\ArkApi\Plugins\$(ProjectName)\" /y</Command>
     </PostBuildEvent>
