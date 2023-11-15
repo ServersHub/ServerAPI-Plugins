@@ -9,9 +9,9 @@
 class MySql : public IDatabase
 {
 public:
-	explicit MySql(std::string server, std::string username, std::string password, std::string db_name,
-	               std::string table_players, std::string table_groups)
-		: table_players_(move(table_players)),
+	explicit MySql(std::string server, std::string username, std::string password, std::string db_name, const unsigned int port,
+		std::string table_players, std::string table_groups, std::string table_tribes)
+		: table_players_(move(table_players)), table_tribes_(move(table_tribes)),
 		  table_groups_(move(table_groups))
 	{
 		try
@@ -23,6 +23,7 @@ public:
 			options.dbname = move(db_name);
 			options.autoreconnect = true;
 			options.timeout = 30;
+			options.port = port;
 
 			bool result = db_.open(options);
 			if (!result)
@@ -35,8 +36,16 @@ public:
 			                               "Id INT NOT NULL AUTO_INCREMENT,"
 			                               "EOS_Id VARCHAR(50) NOT NULL,"
 			                               "PermissionGroups VARCHAR(256) NOT NULL DEFAULT 'Default,',"
+				"TimedPermissionGroups VARCHAR(256) NOT NULL DEFAULT '',"
 			                               "PRIMARY KEY(Id),"
 			                               "UNIQUE INDEX EOS_Id_UNIQUE (EOS_Id ASC));", table_players_));
+			result = db_.query(fmt::format("CREATE TABLE IF NOT EXISTS {} ("
+				"Id INT NOT NULL AUTO_INCREMENT,"
+				"TribeId BIGINT(11) NOT NULL,"
+				"PermissionGroups VARCHAR(256) NOT NULL DEFAULT '',"
+				"TimedPermissionGroups VARCHAR(256) NOT NULL DEFAULT '',"
+				"PRIMARY KEY(Id),"
+				"UNIQUE INDEX TribeId_UNIQUE (TribeId ASC));", table_tribes_));
 			result |= db_.query(fmt::format("CREATE TABLE IF NOT EXISTS {} ("
 			                                "Id INT NOT NULL AUTO_INCREMENT,"
 			                                "GroupName VARCHAR(128) NOT NULL,"
@@ -45,7 +54,6 @@ public:
 			                                "UNIQUE INDEX GroupName_UNIQUE (GroupName ASC));", table_groups_));
 
 			// Add default groups
-
 			result |= db_.query(fmt::format("INSERT INTO {} (GroupName, Permissions)"
 			                                "SELECT 'Admins', '*,'"
 			                                "WHERE NOT EXISTS(SELECT 1 FROM {} WHERE GroupName = 'Admins');",
@@ -56,6 +64,8 @@ public:
 			                                "WHERE NOT EXISTS(SELECT 1 FROM {} WHERE GroupName = 'Default');",
 			                                table_groups_,
 			                                table_groups_));
+
+			upgradeDatabase(db_name);
 
 			if (!result)
 			{
@@ -68,68 +78,85 @@ public:
 		}
 	}
 
+	bool IsFieldExists(std::string tableName, std::string fieldName) override
+	{
+		try
+		{
+			auto result = db_.query(fmt::format(
+				"SHOW COLUMNS FROM {} LIKE '{}';",
+				tableName, fieldName)).count();
+			return result > 0;
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->error("({}) Unexpected DB error {}", __FUNCTION__, exception.what());
+			return false;
+		}
+	}
+	
+	bool IsPlayerExists(const FString& eos_id) override
+	{
+		std::lock_guard<std::mutex> lg(playersMutex);
+		if (permissionPlayers.find(eos_id) == permissionPlayers.end())
+			return false;
+
+		return true;
+	}
+	
 	bool AddPlayer(const FString& eos_id) override
 	{
 		try
 		{
-			return db_.query(fmt::format("INSERT INTO {} (EOS_Id) VALUES ('{}');", table_players_, eos_id.ToStringUTF8()));
+			if (db_.query(fmt::format("INSERT INTO {} (EOS_Id, PermissionGroups) VALUES ('{}', '{}');", table_players_, eos_id.ToString(), "Default,")))
+			{
+				std::lock_guard<std::mutex> lg(playersMutex);
+				permissionPlayers[eos_id] = CachedPermission("Default,", "");
+				return true;
+			}
 		}
 		catch (const std::exception& exception)
 		{
 			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
 			return false;
-		}
-	}
-
-	bool IsPlayerExists(const FString& eos_id) override
-	{
-		try
-		{
-			const auto result = db_.query(fmt::format("SELECT count(1) FROM {} WHERE EOS_Id = '{}';", table_players_, eos_id.ToStringUTF8())).get_value<int>();
-			return result > 0;
-		}
-		catch (const std::exception& exception)
-		{
-			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
-			return false;
-		}
-	}
-
-	bool IsGroupExists(const FString& group) override
-	{
-		try
-		{
-			const auto result = db_.query(fmt::format("SELECT count(1) FROM {} WHERE GroupName = '{}';", table_groups_, group.ToStringUTF8())).get_value<int>();
-
-			return result > 0;
-		}
-		catch (const std::exception& exception)
-		{
-			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
 		}
 
 		return false;
 	}
 
-	TArray<FString> GetPlayerGroups(const FString& eos_id) override
+	bool IsGroupExists(const FString& group) override
+	{
+		std::lock_guard<std::mutex> lg(groupsMutex);
+		if (permissionGroups.find(group.ToString()) == permissionGroups.end())
+			return false;
+
+		return true;
+		}
+
+	TArray<FString> GetPlayerGroups(const FString& eos_id, bool includeTimed = true) override
 	{
 		TArray<FString> groups;
 
-		try
+		if (IsPlayerExists(eos_id))
 		{
-			const std::string permission_groups = db_.query(fmt::format("SELECT PermissionGroups FROM {} WHERE EOS_Id = '{}';", table_players_, eos_id.ToStringUTF8()))
-												.get_value<std::string>();
-			                                  //.get_value<daotk::mysql::optional_type<std::string>>();
-
-			FString groups_fstr(permission_groups.c_str());
-			groups_fstr.ParseIntoArray(groups, L",", true);
+			std::lock_guard<std::mutex> lg(playersMutex);
+			if (includeTimed)
+		{
+				auto nowSecs = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+				groups = permissionPlayers[eos_id].getGroups(nowSecs);
 		}
-		catch (const std::exception& exception)
+			else
 		{
-			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+				groups = permissionPlayers[eos_id].Groups;
+			}
 		}
 
 		return groups;
+	}
+
+	CachedPermission HydratePlayerGroups(const FString& eos_id) override
+	{
+		std::lock_guard<std::mutex> lg(playersMutex);
+		return permissionPlayers[eos_id];
 	}
 
 	TArray<FString> GetGroupPermissions(const FString& group) override
@@ -139,17 +166,11 @@ public:
 
 		TArray<FString> permissions;
 
-		try
+		if (IsGroupExists(group))
 		{
-			const std::string permission_groups = db_.query(fmt::format("SELECT Permissions FROM {} WHERE GroupName = '{}';", table_groups_, group.ToStringUTF8()))
-			                                         .get_value<std::string>();
-
-			FString permissions_fstr(permission_groups.c_str());
+			std::lock_guard<std::mutex> lg(groupsMutex);
+			FString permissions_fstr(permissionGroups[group.ToString()].c_str());
 			permissions_fstr.ParseIntoArray(permissions, L",", true);
-		}
-		catch (const std::exception& exception)
-		{
-			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
 		}
 
 		return permissions;
@@ -158,19 +179,15 @@ public:
 	TArray<FString> GetAllGroups() override
 	{
 		TArray<FString> all_groups;
+		std::unordered_map<std::string, std::string> localGroups;
 
-		try
-		{
-			db_.query(fmt::format("SELECT GroupName FROM {};", table_groups_))
-			   .each([&all_groups](std::string group)
+		groupsMutex.lock();
+		localGroups = permissionGroups;
+		groupsMutex.unlock();
+
+		for (auto& group : localGroups)
 			   {
-				   all_groups.Add(group.c_str());
-				   return true;
-			   });
-		}
-		catch (const std::exception& exception)
-		{
-			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+			all_groups.Add(group.first.c_str());
 		}
 
 		return all_groups;
@@ -179,22 +196,16 @@ public:
 	TArray<FString> GetGroupMembers(const FString& group) override
 	{
 		TArray<FString> members;
+		std::unordered_map<FString, CachedPermission, FStringHash, FStringEqual> localPlayers;
 
-		try
-		{
-			db_.query(fmt::format("SELECT EOS_Id FROM {};", table_players_))
-			   .each([&members, &group](std::string eos_id)
-			   {
-					FString eos_id_fstr(eos_id.c_str());
-					if (Permissions::IsPlayerInGroup(eos_id_fstr, group))
-						members.Add(eos_id_fstr);
+		playersMutex.lock();
+		localPlayers = permissionPlayers;
+		playersMutex.unlock();
 
-					return true;
-			   });
-		}
-		catch (const std::exception& exception)
+		for (auto& players : localPlayers)
 		{
-			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+			if (Permissions::IsPlayerInGroup(players.first, group))
+				members.Add(players.first);
 		}
 
 		return members;
@@ -213,11 +224,23 @@ public:
 
 		try
 		{
-			const bool res = db_.query(fmt::format("UPDATE {} SET PermissionGroups = concat(PermissionGroups, '{},') WHERE EOS_Id = '{}';",
-				table_players_, group.ToStringUTF8(), eos_id.ToStringUTF8()));
+			auto groups = GetPlayerGroups(eos_id, false);
+			groups.AddUnique(group);
+
+			FString query_groups("");
+
+			for (const FString& f : groups)
+				query_groups += f + ",";
+
+			const bool res = db_.query(fmt::format("UPDATE {} SET PermissionGroups = '{}' WHERE EOS_Id = '{}';", table_players_, query_groups.ToString(), eos_id.ToString()));
 			if (!res)
 			{
 				return "Unexpected DB error";
+			}
+			else
+			{
+				std::lock_guard<std::mutex> lg(playersMutex);
+				permissionPlayers[eos_id].Groups.AddUnique(group);
 			}
 		}
 		catch (const std::exception& exception)
@@ -237,7 +260,7 @@ public:
 		if (!Permissions::IsPlayerInGroup(eos_id, group))
 			return "Player is not in group";
 
-		TArray<FString> groups = GetPlayerGroups(eos_id);
+		TArray<FString> groups = GetPlayerGroups(eos_id, false);
 
 		FString new_groups;
 
@@ -249,11 +272,15 @@ public:
 
 		try
 		{
-			const bool res = db_.query(fmt::format("UPDATE {} SET PermissionGroups = '{}' WHERE EOS_Id = '{}';", 
-										table_players_, new_groups.ToStringUTF8(), eos_id.ToStringUTF8()));
+			const bool res = db_.query(fmt::format("UPDATE {} SET PermissionGroups = '{}' WHERE EOS_Id = '{}';", table_players_, new_groups.ToString(), eos_id.ToString()));
 			if (!res)
 			{
 				return "Unexpected DB error";
+			}
+			else
+			{
+				std::lock_guard<std::mutex> lg(playersMutex);
+				permissionPlayers[eos_id].Groups.Remove(group);
 			}
 		}
 		catch (const std::exception& exception)
@@ -272,10 +299,15 @@ public:
 
 		try
 		{
-			const bool res = db_.query(fmt::format("INSERT INTO {} (GroupName) VALUES ('{}');", table_groups_, group.ToStringUTF8()));
+			const bool res = db_.query(fmt::format("INSERT INTO {} (GroupName) VALUES ('{}');", table_groups_, group.ToString()));
 			if (!res)
 			{
 				return "Unexpected DB error";
+			}
+			else
+			{
+				std::lock_guard<std::mutex> lg(groupsMutex);
+				permissionGroups[group.ToString()] = "";
 			}
 		}
 		catch (const std::exception& exception)
@@ -295,6 +327,7 @@ public:
 		// Remove all players from this group
 
 		TArray<FString> group_members = GetGroupMembers(group);
+
 		for (FString player : group_members)
 		{
 			RemovePlayerFromGroup(player, group);
@@ -304,10 +337,15 @@ public:
 
 		try
 		{
-			const bool res = db_.query(fmt::format("DELETE FROM {} WHERE GroupName = '{}';", table_groups_, group.ToStringUTF8()));
+			const bool res = db_.query(fmt::format("DELETE FROM {} WHERE GroupName = '{}';", table_groups_, group.ToString()));
 			if (!res)
 			{
 				return "Unexpected DB error";
+			}
+			else
+			{
+				std::lock_guard<std::mutex> lg(groupsMutex);
+				permissionGroups.erase(group.ToString());
 			}
 		}
 		catch (const std::exception& exception)
@@ -329,11 +367,16 @@ public:
 
 		try
 		{
-			const bool res = db_.query(fmt::format("UPDATE {} SET Permissions = concat(Permissions, '{},') WHERE GroupName = '{}';",
-										table_groups_, permission.ToStringUTF8(), group.ToStringUTF8()));
+			const bool res = db_.query(fmt::format("UPDATE {} SET Permissions = concat(Permissions, '{},') WHERE GroupName = '{}';", table_groups_, permission.ToString(), group.ToString()));
 			if (!res)
 			{
 				return "Unexpected DB error";
+			}
+			else
+			{
+				std::lock_guard<std::mutex> lg(groupsMutex);
+				std::string groupPermissions = fmt::format("{},{}", permission.ToString(), permissionGroups[group.ToString()]);
+				permissionGroups[group.ToString()] = groupPermissions;
 			}
 		}
 		catch (const std::exception& exception)
@@ -365,11 +408,15 @@ public:
 
 		try
 		{
-			const bool res = db_.query(fmt::format("UPDATE {} SET Permissions = '{}' WHERE GroupName = '{}';",
-			                                       table_groups_, new_permissions.ToStringUTF8(), group.ToStringUTF8()));
+			const bool res = db_.query(fmt::format("UPDATE {} SET Permissions = '{}' WHERE GroupName = '{}';", table_groups_, new_permissions.ToString(), group.ToString()));
 			if (!res)
 			{
 				return "Unexpected DB error";
+			}
+			else
+			{
+				std::lock_guard<std::mutex> lg(groupsMutex);
+				permissionGroups[group.ToString()] = new_permissions.ToString();
 			}
 		}
 		catch (const std::exception& exception)
@@ -381,8 +428,466 @@ public:
 		return {};
 	}
 
+	std::optional<std::string> AddPlayerToTimedGroup(const FString& eos_id, const FString& group, int secs, int delaySecs) override
+	{
+		if (!IsPlayerExists(eos_id))
+			AddPlayer(eos_id);
+
+		if (!IsGroupExists(group))
+			return  "Group does not exist";
+
+		TArray<TimedGroup> groups;
+		if (IsPlayerExists(eos_id))
+		{
+			playersMutex.lock();
+			groups = permissionPlayers[eos_id].TimedGroups;
+			playersMutex.unlock();
+		}
+		for (int32 Index = groups.Num() - 1; Index >= 0; --Index)
+		{
+			const TimedGroup& current_group = groups[Index];
+			if (current_group.GroupName.Equals(group)) {
+				groups.RemoveAt(Index);
+				continue;
+			}
+		}
+		if (Permissions::IsPlayerInGroup(eos_id, group))
+			return "Player is already permanetly in this group.";
+
+		long long ExpireAtSecs = 0;
+		long long delayUntilSecs = 0;
+		if (delaySecs > 0) {
+			delayUntilSecs = std::chrono::duration_cast<std::chrono::seconds>((std::chrono::system_clock::now() + std::chrono::seconds(delaySecs)).time_since_epoch()).count();
+		}
+		ExpireAtSecs = std::chrono::duration_cast<std::chrono::seconds>((std::chrono::system_clock::now() + std::chrono::seconds(secs)).time_since_epoch()).count();
+
+		groups.Add(TimedGroup{ group, delayUntilSecs, ExpireAtSecs });
+		FString new_groups;
+		for (const TimedGroup& current_group : groups)
+		{
+			new_groups += FString::Format("{};{};{},", current_group.DelayUntilTime, current_group.ExpireAtTime, current_group.GroupName.ToString());
+		}
+		try
+		{
+			const bool res = db_.query(fmt::format("UPDATE {} SET TimedPermissionGroups = '{}' WHERE EOS_Id = '{}';", table_players_, new_groups.ToString(), eos_id.ToString()));
+			if (!res)
+			{
+				return "Unexpected DB error";
+			}
+			else
+			{
+				std::lock_guard<std::mutex> lg(playersMutex);
+				permissionPlayers[eos_id].TimedGroups = groups;
+			}
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+			return "Unexpected DB error";
+		}
+
+		return {};
+	}
+
+	std::optional<std::string> RemovePlayerFromTimedGroup(const FString& eos_id, const FString& group) override
+	{
+		if (!IsPlayerExists(eos_id) || !IsGroupExists(group))
+			return "Player or group does not exist";
+
+		playersMutex.lock();
+		TArray<TimedGroup> groups = permissionPlayers[eos_id].TimedGroups;
+		playersMutex.unlock();
+
+		FString new_groups;
+
+		int32 groupIndex = INDEX_NONE;
+		for (int32 Index = 0; Index != groups.Num(); ++Index)
+		{
+			const TimedGroup& current_group = groups[Index];
+			if (current_group.GroupName != group)
+				new_groups += FString::Format("{};{};{},", current_group.DelayUntilTime, current_group.ExpireAtTime, current_group.GroupName.ToString());
+			else
+				groupIndex = Index;
+		}
+		if (groupIndex == INDEX_NONE)
+			return "Player is not in timed group";
+
+		try
+		{
+			const bool res = db_.query(fmt::format("UPDATE {} SET TimedPermissionGroups = '{}' WHERE EOS_Id = '{}';", table_players_, new_groups.ToString(), eos_id.ToString()));
+			if (!res)
+			{
+				return "Unexpected DB error";
+			}
+			else
+			{
+				std::lock_guard<std::mutex> lg(playersMutex);
+				permissionPlayers[eos_id].TimedGroups.RemoveAt(groupIndex);
+			}
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+			return "Unexpected DB error";
+		}
+
+		return {};
+	}
+
+	void UpdatePlayerGroupCallbacks(const FString& eos_id, TArray<FString> groups) override
+	{
+		std::lock_guard<std::mutex> lg(playersMutex);
+		permissionPlayers[eos_id].CallbackGroups = groups;
+	}
+
+	bool IsTribeExists(int tribeId) override
+	{
+		bool found = false;
+
+		std::lock_guard<std::mutex> lg(tribesMutex);
+		if (permissionTribes.find(tribeId) == permissionTribes.end())
+			found = false;
+		else
+			found = true;
+
+		return found;
+	}
+
+	bool AddTribe(int tribeId) override
+	{
+		try
+		{
+			if (db_.query(fmt::format("INSERT INTO {} (TribeId) VALUES ({});", table_tribes_, tribeId)))
+			{
+				std::lock_guard<std::mutex> lg(tribesMutex);
+				permissionTribes[tribeId] = CachedPermission("", "");
+				return true;
+			}
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+			return false;
+		}
+
+		return false;
+	}
+
+	TArray<FString> GetTribeGroups(int tribeId, bool includeTimed = true) override
+	{
+		TArray<FString> groups;
+
+		if (IsTribeExists(tribeId))
+		{
+			std::lock_guard<std::mutex> lg(tribesMutex);
+			if (includeTimed)
+			{
+				auto nowSecs = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+				groups = permissionTribes[tribeId].getGroups(nowSecs);
+			}
+			else
+			{
+				groups = permissionTribes[tribeId].Groups;
+			}
+		}
+
+		return groups;
+	}
+
+	CachedPermission HydrateTribeGroups(int tribeId) override
+	{
+		std::lock_guard<std::mutex> lg(tribesMutex);
+		return permissionTribes[tribeId];
+	}
+
+	std::optional<std::string> AddTribeToGroup(int tribeId, const FString& group) override
+	{
+		if (!IsTribeExists(tribeId))
+			AddTribe(tribeId);
+
+		if (!IsGroupExists(group))
+			return  "Group does not exist";
+
+		if (Permissions::IsTribeInGroup(tribeId, group))
+			return "Tribe was already added";
+
+		try
+		{
+			auto groups = GetTribeGroups(tribeId, false);
+			groups.AddUnique(group);
+
+			FString query_groups("");
+
+			for (const FString& f : groups)
+				query_groups += f + ",";
+
+			const bool res = db_.query(fmt::format("UPDATE {} SET PermissionGroups = '{}' WHERE TribeId = {};", table_tribes_, query_groups.ToString(), tribeId));
+			if (!res)
+			{
+				return "Unexpected DB error";
+			}
+			else
+			{
+				std::lock_guard<std::mutex> lg(tribesMutex);
+				permissionTribes[tribeId].Groups.Add(group);
+			}
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+			return "Unexpected DB error";
+		}
+
+		return {};
+	}
+
+	std::optional<std::string> RemoveTribeFromGroup(int tribeId, const FString& group) override
+	{
+		if (!IsTribeExists(tribeId) || !IsGroupExists(group))
+			return "Tribe or group does not exist";
+
+		if (!Permissions::IsTribeInGroup(tribeId, group))
+			return "Tribe is not in group";
+
+		TArray<FString> groups = GetTribeGroups(tribeId, false);
+
+		FString new_groups;
+
+		for (const FString& current_group : groups)
+		{
+			if (current_group != group)
+				new_groups += current_group + ",";
+		}
+
+		try
+		{
+			const bool res = db_.query(fmt::format("UPDATE {} SET PermissionGroups = '{}' WHERE TribeId = {};", table_tribes_, new_groups.ToString(), tribeId));
+			if (!res)
+			{
+				return "Unexpected DB error";
+			}
+			else
+			{
+				std::lock_guard<std::mutex> lg(tribesMutex);
+				permissionTribes[tribeId].Groups.Remove(group);
+			}
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+			return "Unexpected DB error";
+		}
+
+		return {};
+	}
+
+	std::optional<std::string> AddTribeToTimedGroup(int tribeId, const FString& group, int secs, int delaySecs) override
+	{
+		if (!IsTribeExists(tribeId))
+			AddTribe(tribeId);
+
+		if (!IsGroupExists(group))
+			return  "Group does not exist";
+
+		TArray<TimedGroup> groups;
+		if (IsTribeExists(tribeId))
+		{
+			tribesMutex.lock();
+			groups = permissionTribes[tribeId].TimedGroups;
+			tribesMutex.unlock();
+		}
+		for (int32 Index = groups.Num() - 1; Index >= 0; --Index)
+		{
+			const TimedGroup& current_group = groups[Index];
+			if (current_group.GroupName.Equals(group)) {
+				groups.RemoveAt(Index);
+				continue;
+			}
+		}
+		if (Permissions::IsTribeInGroup(tribeId, group))
+			return "Tribe is already permanetly in this group.";
+
+		long long ExpireAtSecs = 0;
+		long long delayUntilSecs = 0;
+		if (delaySecs > 0) {
+			delayUntilSecs = std::chrono::duration_cast<std::chrono::seconds>((std::chrono::system_clock::now() + std::chrono::seconds(delaySecs)).time_since_epoch()).count();
+		}
+		ExpireAtSecs = std::chrono::duration_cast<std::chrono::seconds>((std::chrono::system_clock::now() + std::chrono::seconds(secs)).time_since_epoch()).count();
+
+		groups.Add(TimedGroup{ group, delayUntilSecs, ExpireAtSecs });
+		FString new_groups;
+		for (const TimedGroup& current_group : groups)
+		{
+			new_groups += FString::Format("{};{};{},", current_group.DelayUntilTime, current_group.ExpireAtTime, current_group.GroupName.ToString());
+		}
+		try
+		{
+			const bool res = db_.query(fmt::format("UPDATE {} SET TimedPermissionGroups = '{}' WHERE TribeId = {};", table_tribes_, new_groups.ToString(), tribeId));
+			if (!res)
+			{
+				return "Unexpected DB error";
+			}
+			else
+			{
+				std::lock_guard<std::mutex> lg(tribesMutex);
+				permissionTribes[tribeId].TimedGroups = groups;
+			}
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+			return "Unexpected DB error";
+		}
+
+		return {};
+	}
+
+	std::optional<std::string> RemoveTribeFromTimedGroup(int tribeId, const FString& group) override
+	{
+		if (!IsTribeExists(tribeId) || !IsGroupExists(group))
+			return "Tribe or group does not exist";
+
+		tribesMutex.lock();
+		TArray<TimedGroup> groups = permissionTribes[tribeId].TimedGroups;
+		tribesMutex.unlock();
+
+		FString new_groups;
+
+		int32 groupIndex = INDEX_NONE;
+		for (int32 Index = 0; Index != groups.Num(); ++Index)
+		{
+			const TimedGroup& current_group = groups[Index];
+			if (current_group.GroupName != group)
+				new_groups += FString::Format("{};{};{},", current_group.DelayUntilTime, current_group.ExpireAtTime, current_group.GroupName.ToString());
+			else
+				groupIndex = Index;
+		}
+		if (groupIndex == INDEX_NONE)
+			return "Tribe is not in timed group";
+
+		try
+		{
+			const bool res = db_.query(fmt::format("UPDATE {} SET TimedPermissionGroups = '{}' WHERE TribeId = {};", table_tribes_, new_groups.ToString(), tribeId));
+			if (!res)
+			{
+				return "Unexpected DB error";
+			}
+			else
+			{
+				std::lock_guard<std::mutex> lg(tribesMutex);
+				permissionTribes[tribeId].TimedGroups.RemoveAt(groupIndex);
+			}
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+			return "Unexpected DB error";
+		}
+
+		return {};
+	}
+
+	void UpdateTribeGroupCallbacks(int tribeId, TArray<FString> groups) override
+	{
+		std::lock_guard<std::mutex> lg(tribesMutex);
+		permissionTribes[tribeId].CallbackGroups = groups;
+	}
+
+	void Init() override
+	{
+		auto pGroups = InitGroups();
+		groupsMutex.lock();
+		permissionGroups = pGroups;
+		groupsMutex.unlock();
+
+		auto pPlayers = InitPlayers();
+		playersMutex.lock();
+		permissionPlayers = pPlayers;
+		playersMutex.unlock();
+
+		auto pTribes = InitTribes();
+		tribesMutex.lock();
+		permissionTribes = pTribes;
+		tribesMutex.unlock();
+	}
+
+	std::unordered_map<std::string, std::string> InitGroups() override
+	{
+		std::unordered_map<std::string, std::string> pGroups;
+
+		try
+		{
+			db_.query(fmt::format("SELECT GroupName, Permissions FROM {};", table_groups_))
+				.each([&pGroups](std::string groupName, std::string groupPermissions)
+					{
+						pGroups[groupName] = groupPermissions;
+						return true;
+					});
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+		}
+
+		return pGroups;
+	}
+
+	std::unordered_map<FString, CachedPermission, FStringHash, FStringEqual> InitPlayers() override
+	{
+		std::unordered_map<FString, CachedPermission, FStringHash, FStringEqual> pPlayers;
+
+		try
+		{
+			db_.query(fmt::format("SELECT EOS_Id, PermissionGroups, TimedPermissionGroups FROM {};", table_players_))
+				.each([&pPlayers](std::string eos_id, std::string groups, std::string timedGroups)
+					{
+						pPlayers[FString(eos_id.c_str())] = CachedPermission(FString(groups.c_str()), FString(timedGroups.c_str()));
+						return true;
+					});
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+		}
+
+		return pPlayers;
+	}
+
+	std::unordered_map<int, CachedPermission> InitTribes() override
+	{
+		std::unordered_map<int, CachedPermission> pTribes;
+
+		try
+		{
+			db_.query(fmt::format("SELECT TribeId, PermissionGroups, TimedPermissionGroups FROM {};", table_tribes_))
+				.each([&pTribes](int tribeId, std::string groups, std::string timedGroups)
+					{
+						pTribes[tribeId] = CachedPermission(groups.c_str(), timedGroups.c_str());
+						return true;
+					});
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->error("({} {}) Unexpected DB error {}", __FILE__, __FUNCTION__, exception.what());
+		}
+
+		return pTribes;
+	}
+
+	void upgradeDatabase(std::string db_name)
+	{
+		if (!IsFieldExists(table_players_, "TimedPermissionGroups"))
+		{
+			if (!db_.query(fmt::format("ALTER TABLE {} ADD COLUMN TimedPermissionGroups VARCHAR(256) DEFAULT '' AFTER PermissionGroups;", table_players_)))
+			{
+				Log::GetLog()->critical("({} {}) Failed to update Permissions {} table!", __FILE__, __FUNCTION__, table_players_);
+			}
+		}
+	}
+
 private:
 	daotk::mysql::connection db_;
 	std::string table_players_;
+	std::string table_tribes_;
 	std::string table_groups_;
 };

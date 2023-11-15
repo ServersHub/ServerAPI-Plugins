@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Private\CachedPermission.h" />
     <ClInclude Include="Private\Database\IDatabase.h" />
     <ClInclude Include="Private\Database\MysqlDB.h" />
     <ClInclude Include="Private\Database\SqlLiteDB.h" />
@@ -33,6 +34,10 @@
     <ClCompile Include="Private\SQLiteCpp\Exception.cpp" />
     <ClCompile Include="Private\SQLiteCpp\Statement.cpp" />
     <ClCompile Include="Private\SQLiteCpp\Transaction.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Configs\config.json" />
+    <None Include="..\Configs\PluginInfo.json" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -127,9 +132,9 @@
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /I  /Y "$(TargetDir)Permissions.lib" "..\out_lib\"
+      <Command>xcopy /I  /Y "$(TargetDir)Permissions.lib" "$(SolutionDir)out_lib\"
 
-copy "$(SolutionDir)$(ConfigurationName)Configs\*.*" "F:\ASA-Dedicated\asa-server\ShooterGame\Binaries\Win64\ArkApi\Plugins\$(ProjectName)\" /y
+copy "$(SolutionDir)Configs\*.*" "F:\ASA-Dedicated\asa-server\ShooterGame\Binaries\Win64\ArkApi\Plugins\$(ProjectName)\" /y
 copy "$(SolutionDir)$(PlatformName)\$(ConfigurationName)\$(ProjectName).dll" "F:\ASA-Dedicated\asa-server\ShooterGame\Binaries\Win64\ArkApi\Plugins\$(ProjectName)\" /y
 copy "$(SolutionDir)$(PlatformName)\$(ConfigurationName)\$(ProjectName).pdb" "F:\ASA-Dedicated\asa-server\ShooterGame\Binaries\Win64\ArkApi\Plugins\$(ProjectName)\" /y</Command>
     </PostBuildEvent>

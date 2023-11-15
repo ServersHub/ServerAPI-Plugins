@@ -1,11 +1,11 @@
-//#define _CXX20_REMOVE_CISO646
 #define _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
-#pragma comment(lib, "AsaApi.lib")
+
 #include "json.hpp"
 
 #include "Database/SqlLiteDB.h"
 #include "Database/MysqlDB.h"
+#include "thread_pool.hpp"
 
 #include "Main.h"
 
@@ -16,12 +16,66 @@
 #include "Hooks.h"
 #include "Helper.h"
 
+#pragma comment(lib, "AsaApi.lib")
+
+// Manage all async calls
+thread_pool pool;
 namespace Permissions
 {
 	nlohmann::json config;
+	time_t lastDatabaseSyncTime = time(0);
+	int SyncFrequency = 60;
+
+	FTribeData* GetTribeData(AShooterPlayerController* playerController)
+	{
+		auto playerState = reinterpret_cast<AShooterPlayerState*>(playerController->PlayerStateField().Get());
+		if (playerState)
+			return &playerState->MyTribeDataField();
+
+		return nullptr;
+	}
+
+	int GetTribeId(AShooterPlayerController* playerController)
+	{
+		int tribeId = 0;
+
+		auto playerState = reinterpret_cast<AShooterPlayerState*>(playerController->PlayerStateField().Get());
+		if (playerState)
+		{
+			FTribeData* tribeData = GetTribeData(playerController);
+			if (tribeData)
+				tribeId = tribeData->TribeIDField();
+		}
+
+		return tribeId;
+	}
+
+	TArray<FString> GetTribeDefaultGroups(FTribeData* tribeData) {
+		TArray<FString> groups;
+		if (tribeData) {
+			auto world = AsaApi::GetApiUtils().GetWorld();
+			auto tribeId = tribeData->TribeIDField();
+			auto Tribemates = tribeData->MembersPlayerDataIDField();
+			const auto& player_controllers = world->PlayerControllerListField();
+			int tribematesOnline = 0;
+			for (TWeakObjectPtr<APlayerController> player_controller : player_controllers)
+			{
+				AShooterPlayerController* pc = static_cast<AShooterPlayerController*>(player_controller.Get());
+				if (pc)
+				{
+					auto playerId = pc->GetLinkedPlayerID();
+					if (Tribemates.Contains(playerId)) {
+						tribematesOnline++;
+					}
+				}
+			}
+			groups.Add(FString::Format("TribeSize:{}", Tribemates.Num()));
+			groups.Add(FString::Format("TribeOnline:{}", tribematesOnline));
+		}
+		return groups;
+	}
 
 	// AddPlayerToGroup
-
 	std::optional<std::string> AddPlayerToGroup(const FString& cmd)
 	{
 		TArray<FString> parsed;
@@ -111,6 +165,291 @@ namespace Permissions
 		auto result = RemovePlayerFromGroup(rcon_packet->Body);
 		if (!result.has_value())
 			SendRconReply(rcon_connection, rcon_packet->Id, "Successfully removed player");
+		else
+			SendRconReply(rcon_connection, rcon_packet->Id, result.value().c_str());
+	}
+
+	// AddPlayerToTimedGroup
+	std::optional<std::string> AddPlayerToTimedGroup(const FString& cmd)
+	{
+		TArray<FString> parsed;
+		cmd.ParseIntoArray(parsed, L" ", true);
+
+		if (!parsed.IsValidIndex(3))
+			return "Wrong syntax, Should be AddPlayerToTimedGroup eos_id hours delayHours";
+
+		long secs = 0;
+		long delaySecs = 0;
+		const FString eos_id = *parsed[1];
+
+		const FString group = *parsed[2];
+
+		try
+		{
+			secs = std::stof(*parsed[3]) * 3600;
+			if (parsed.IsValidIndex(4)) {
+				delaySecs = std::stof(*parsed[4]) * 3600;
+				secs += delaySecs;
+			}
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->error("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
+			return "Parsing error";
+		}
+		if (secs < 0 || delaySecs < 0) {
+			return "Wrong syntax, Should be AddPlayerToTimedGroup eos_id hours delayHours";
+		}
+
+		return AddPlayerToTimedGroup(eos_id, group, secs, delaySecs);
+	}
+
+	void AddPlayerToTimedGroupCmd(APlayerController* player_controller, FString* cmd, bool)
+	{
+		const auto shooter_controller = static_cast<AShooterPlayerController*>(player_controller);
+
+		auto result = AddPlayerToTimedGroup(*cmd);
+		//if (!result.has_value())
+		//	AsaApi::GetApiUtils().SendServerMessage(shooter_controller, FColorList::Green, "Successfully added player to timed group.");
+		//else
+		//	AsaApi::GetApiUtils().SendServerMessage(shooter_controller, FColorList::Red, result.value().c_str());
+	}
+
+	void AddPlayerToTimedGroupRcon(RCONClientConnection* rcon_connection, RCONPacket* rcon_packet, UWorld*)
+	{
+		auto result = AddPlayerToTimedGroup(rcon_packet->Body);
+		if (!result.has_value())
+			SendRconReply(rcon_connection, rcon_packet->Id, "Successfully added player to timed group.");
+		else
+			SendRconReply(rcon_connection, rcon_packet->Id, result.value().c_str());
+	}
+
+	// RemovePlayerFromTimedGroup
+	std::optional<std::string> RemovePlayerFromTimedGroup(const FString& cmd)
+	{
+		TArray<FString> parsed;
+		cmd.ParseIntoArray(parsed, L" ", true);
+
+		if (!parsed.IsValidIndex(2))
+			return "Wrong syntax";
+
+		const FString eos_id = *parsed[1];
+		const FString group = *parsed[2];
+
+		return database->RemovePlayerFromTimedGroup(eos_id, group);
+	}
+
+	void RemovePlayerFromTimedGroupCmd(APlayerController* player_controller, FString* cmd, bool)
+	{
+		const auto shooter_controller = static_cast<AShooterPlayerController*>(player_controller);
+
+		auto result = RemovePlayerFromTimedGroup(*cmd);
+		//if (!result.has_value())
+		//	AsaApi::GetApiUtils().SendServerMessage(shooter_controller, FColorList::Green, "Successfully removed player from timed group.");
+		//else
+		//	AsaApi::GetApiUtils().SendServerMessage(shooter_controller, FColorList::Red, result.value().c_str());
+	}
+
+	void RemovePlayerFromTimedGroupRcon(RCONClientConnection* rcon_connection, RCONPacket* rcon_packet, UWorld*)
+	{
+		auto result = RemovePlayerFromTimedGroup(rcon_packet->Body);
+		if (!result.has_value())
+			SendRconReply(rcon_connection, rcon_packet->Id, "Successfully aremoved player from timed group.");
+		else
+			SendRconReply(rcon_connection, rcon_packet->Id, result.value().c_str());
+	}
+
+	// AddTribeToGroup
+	std::optional<std::string> AddTribeToGroup(const FString& cmd)
+	{
+		TArray<FString> parsed;
+		cmd.ParseIntoArray(parsed, L" ", true);
+
+		if (!parsed.IsValidIndex(2))
+			return "Wrong syntax";
+
+		int tribe_id;
+
+		const FString group = *parsed[2];
+
+		try
+		{
+			tribe_id = std::stoull(*parsed[1]);
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->error("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
+			return "Parsing error";
+		}
+
+		return AddTribeToGroup(tribe_id, group);
+	}
+
+	void AddTribeToGroupCmd(APlayerController* player_controller, FString* cmd, bool)
+	{
+		const auto shooter_controller = static_cast<AShooterPlayerController*>(player_controller);
+
+		auto result = AddTribeToGroup(*cmd);
+		//if (!result.has_value())
+		//	AsaApi::GetApiUtils().SendServerMessage(shooter_controller, FColorList::Green, "Successfully added tribe");
+		//else
+		//	AsaApi::GetApiUtils().SendServerMessage(shooter_controller, FColorList::Red, result.value().c_str());
+	}
+
+	void AddTribeToGroupRcon(RCONClientConnection* rcon_connection, RCONPacket* rcon_packet, UWorld*)
+	{
+		auto result = AddTribeToGroup(rcon_packet->Body);
+		if (!result.has_value())
+			SendRconReply(rcon_connection, rcon_packet->Id, "Successfully added tribe");
+		else
+			SendRconReply(rcon_connection, rcon_packet->Id, result.value().c_str());
+	}
+
+	// RemoveTribeFromGroup
+	std::optional<std::string> RemoveTribeFromGroup(const FString& cmd)
+	{
+		TArray<FString> parsed;
+		cmd.ParseIntoArray(parsed, L" ", true);
+
+		if (!parsed.IsValidIndex(2))
+			return "Wrong syntax";
+
+		int tribe_id;
+
+		const FString group = *parsed[2];
+
+		try
+		{
+			tribe_id = std::stoull(*parsed[1]);
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->error("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
+			return "Parsing error";
+		}
+
+		return database->RemoveTribeFromGroup(tribe_id, group);
+	}
+
+	void RemoveTribeFromGroupCmd(APlayerController* player_controller, FString* cmd, bool)
+	{
+		const auto shooter_controller = static_cast<AShooterPlayerController*>(player_controller);
+
+		auto result = RemoveTribeFromGroup(*cmd);
+		//if (!result.has_value())
+		//	AsaApi::GetApiUtils().SendServerMessage(shooter_controller, FColorList::Green,
+		//		"Successfully removed tribe");
+		//else
+		//	AsaApi::GetApiUtils().SendServerMessage(shooter_controller, FColorList::Red, result.value().c_str());
+	}
+
+	void RemoveTribeFromGroupRcon(RCONClientConnection* rcon_connection, RCONPacket* rcon_packet, UWorld*)
+	{
+		auto result = RemoveTribeFromGroup(rcon_packet->Body);
+		if (!result.has_value())
+			SendRconReply(rcon_connection, rcon_packet->Id, "Successfully removed tribe");
+		else
+			SendRconReply(rcon_connection, rcon_packet->Id, result.value().c_str());
+	}
+
+	// AddTribeToTimedGroup
+	std::optional<std::string> AddTribeToTimedGroup(const FString& cmd)
+	{
+		TArray<FString> parsed;
+		cmd.ParseIntoArray(parsed, L" ", true);
+
+		if (!parsed.IsValidIndex(3))
+			return "Wrong syntax, Should be AddTribeToTimedGroup tribeId hours delayHours";
+
+		long secs = 0;
+		long delaySecs = 0;
+		int tribe_id;
+
+		const FString group = *parsed[2];
+
+		try
+		{
+			tribe_id = std::stoull(*parsed[1]);
+			secs = std::stof(*parsed[3]) * 3600;
+			if (parsed.IsValidIndex(4)) {
+				delaySecs = std::stof(*parsed[4]) * 3600;
+				secs += delaySecs;
+			}
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->error("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
+			return "Parsing error";
+		}
+		if (secs < 0 || delaySecs < 0) {
+			return "Wrong syntax, Should be AddTribeToTimedGroup tribeId hours delayHours";
+		}
+
+		return AddTribeToTimedGroup(tribe_id, group, secs, delaySecs);
+	}
+
+	void AddTribeToTimedGroupCmd(APlayerController* player_controller, FString* cmd, bool)
+	{
+		const auto shooter_controller = static_cast<AShooterPlayerController*>(player_controller);
+
+		auto result = AddTribeToTimedGroup(*cmd);
+		//if (!result.has_value())
+		//	AsaApi::GetApiUtils().SendServerMessage(shooter_controller, FColorList::Green, "Successfully added tribe to timed group.");
+		//else
+		//	AsaApi::GetApiUtils().SendServerMessage(shooter_controller, FColorList::Red, result.value().c_str());
+	}
+
+	void AddTribeToTimedGroupRcon(RCONClientConnection* rcon_connection, RCONPacket* rcon_packet, UWorld*)
+	{
+		auto result = AddTribeToTimedGroup(rcon_packet->Body);
+		if (!result.has_value())
+			SendRconReply(rcon_connection, rcon_packet->Id, "Successfully added tribe to timed group.");
+		else
+			SendRconReply(rcon_connection, rcon_packet->Id, result.value().c_str());
+	}
+
+	// RemoveTribeFromTimedGroup
+	std::optional<std::string> RemoveTribeFromTimedGroup(const FString& cmd)
+	{
+		TArray<FString> parsed;
+		cmd.ParseIntoArray(parsed, L" ", true);
+
+		if (!parsed.IsValidIndex(2))
+			return "Wrong syntax";
+
+		int tribe_id = 0;
+
+		const FString group = *parsed[2];
+
+		try
+		{
+			tribe_id = std::stoull(*parsed[1]);
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->error("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
+			return "Parsing error";
+		}
+
+		return database->RemoveTribeFromTimedGroup(tribe_id, group);
+	}
+
+	void RemoveTribeFromTimedGroupCmd(APlayerController* player_controller, FString* cmd, bool)
+	{
+		const auto shooter_controller = static_cast<AShooterPlayerController*>(player_controller);
+
+		auto result = RemoveTribeFromTimedGroup(*cmd);
+		//if (!result.has_value())
+		//	AsaApi::GetApiUtils().SendServerMessage(shooter_controller, FColorList::Green, "Successfully removed tribe from timed group.");
+		//else
+		//	AsaApi::GetApiUtils().SendServerMessage(shooter_controller, FColorList::Red, result.value().c_str());
+	}
+
+	void RemoveTribeFromTimedGroupRcon(RCONClientConnection* rcon_connection, RCONPacket* rcon_packet, UWorld*)
+	{
+		auto result = RemoveTribeFromTimedGroup(rcon_packet->Body);
+		if (!result.has_value())
+			SendRconReply(rcon_connection, rcon_packet->Id, "Successfully aremoved tribe from timed group.");
 		else
 			SendRconReply(rcon_connection, rcon_packet->Id, result.value().c_str());
 	}
@@ -259,6 +598,139 @@ namespace Permissions
 	}
 
 	// PlayerGroups
+	std::string getTimeLeft(int secs, int intervalsToShow) {
+		int days, hours, mins;
+		std::string timeLeft = "";
+		int secsLeft = secs;
+		int shown = 0;
+		if (secsLeft > 0) {
+			days = secsLeft / 86400;
+			if (days > 0 && intervalsToShow > shown) {
+				if (timeLeft.size() > 0) timeLeft += ", ";
+				timeLeft += fmt::format("{} Day{}", (int)days, (days >= 1 ? "s" : ""));
+				secsLeft -= days * 86400;
+				shown++;
+			}
+			hours = secsLeft / 3600;
+			if (hours > 0 && intervalsToShow > shown) {
+				if (timeLeft.size() > 0) timeLeft += ", ";
+				timeLeft += fmt::format("{} Hr{}", (int)hours, (hours >= 1 ? "s" : ""));
+				secsLeft -= hours * 3600;
+				shown++;
+			}
+			mins = secsLeft / 60;
+			if (mins > 0 && intervalsToShow > shown) {
+				if (timeLeft.size() > 0) timeLeft += ", ";
+				timeLeft += fmt::format("{} Min{}", (int)mins, (mins >= 1 ? "s" : ""));
+				secsLeft -= mins * 60;
+				shown++;
+			}
+			if (secsLeft > 0 && intervalsToShow > shown) {
+				if (timeLeft.size() > 0) timeLeft += ", ";
+				timeLeft += fmt::format("{} Sec{}", (int)secsLeft, (secsLeft >= 1 ? "s" : ""));
+				shown++;
+			}
+		}
+		return timeLeft;
+	}
+
+	FString GetTribeGroupsStr(FString tribeDefaults, int tribe_id, bool forChat) {
+		if (!database->IsTribeExists(tribe_id))
+			return "";
+
+		CachedPermission permissions = database->HydrateTribeGroups(tribe_id);
+
+		FString groups_str = tribeDefaults;
+		for (int32 Index = 0; Index != permissions.Groups.Num(); ++Index) {
+			if (groups_str.Len() > 0) groups_str += ", ";
+			groups_str += permissions.Groups[Index];
+		}
+		auto nowSecs = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
+		for (int32 Index = 0; Index != permissions.TimedGroups.Num(); ++Index) {
+			const TimedGroup& current_group = permissions.TimedGroups[Index];
+			if (current_group.ExpireAtTime <= nowSecs) continue;
+			if (groups_str.Len() > 0)
+				groups_str += "\n";
+			groups_str += current_group.GroupName;
+			if (current_group.DelayUntilTime > 0 && current_group.DelayUntilTime > nowSecs) {
+				auto diff = current_group.DelayUntilTime - nowSecs;
+				groups_str += FString::Format(" - Activates in {}", getTimeLeft(diff, 2));
+			}
+			else if (current_group.ExpireAtTime > nowSecs) {
+				auto diff = current_group.ExpireAtTime - nowSecs;
+				groups_str += FString::Format(" - Ends in {}", getTimeLeft(diff, 2));
+			}
+		}
+		if (groups_str.Len() > 0) {
+			if (forChat) {
+				groups_str = FString::Format("<RichColor Color=\"0.91, 0.85 , 0.09, 1\">Tribe Permissions: </>{}", groups_str.ToString());
+			}
+			else {
+				groups_str = FString::Format("Tribe Permissions: {}", groups_str.ToString());
+			}
+		}
+		return groups_str;
+	}
+
+	FString GetPlayerGroupsStr(const FString eos_id, bool forChat) {
+		if (!database->IsPlayerExists(eos_id))
+			return "";
+
+		CachedPermission permissions = database->HydratePlayerGroups(eos_id);
+
+		FString groups_str;
+		for (const FString& current_group : permissions.Groups)
+		{
+			if (groups_str.Len() > 0) groups_str += ", ";
+			groups_str += current_group;
+		}
+		auto nowSecs = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
+		for (const TimedGroup& current_group : permissions.TimedGroups)
+		{
+			if (current_group.ExpireAtTime < nowSecs) continue;
+			if (groups_str.Len() > 0)
+				groups_str += "\n";
+			groups_str += current_group.GroupName;
+			if (current_group.DelayUntilTime > 0 && current_group.DelayUntilTime > nowSecs) {
+				auto diff = current_group.DelayUntilTime - nowSecs;
+				groups_str += FString::Format(" - Activates in {}", getTimeLeft(diff, 2));
+			}
+			else if (current_group.ExpireAtTime > nowSecs) {
+				auto diff = current_group.ExpireAtTime - nowSecs;
+				groups_str += FString::Format(" - Ends in {}", getTimeLeft(diff, 2));
+			}
+		}
+
+		auto world = AsaApi::GetApiUtils().GetWorld();
+		if (world) {
+			const auto& player_controllers = world->PlayerControllerListField();
+			for (TWeakObjectPtr<APlayerController> player_controller : player_controllers)
+			{
+				AShooterPlayerController* shooter_pc = static_cast<AShooterPlayerController*>(player_controller.Get());
+
+				auto tribeData = Permissions::GetTribeData(shooter_pc);
+				if (tribeData) {
+					auto tribeId = tribeData->TribeIDField();
+					if (tribeId > 0) {
+						auto defaultTribeGroups = GetTribeDefaultGroups(tribeData);
+						FString defaults = "";
+						for (auto tribeGroup : defaultTribeGroups) {
+							if (defaults.Len() > 0) defaults += ", ";
+							defaults += tribeGroup;
+						}
+						FString tribeStr = GetTribeGroupsStr(defaults, tribeId, forChat);
+						if (groups_str.Len() > 0 && tribeStr.Len() > 0)
+							groups_str += "\n";
+						groups_str += tribeStr;
+					}
+				}
+			}
+		}
+
+		return groups_str;
+	}
 
 	FString PlayerGroups(const FString& cmd)
 	{
@@ -280,19 +752,7 @@ namespace Permissions
 			return "";
 		}
 
-		TArray<FString> groups = database->GetPlayerGroups(eos_id);
-
-		FString groups_str;
-
-		for (const FString& current_group : groups)
-		{
-			groups_str += current_group + ",";
-		}
-
-		if (!groups_str.IsEmpty())
-			groups_str.RemoveAt(groups_str.Len() - 1);
-
-		return groups_str;
+		return GetPlayerGroupsStr(eos_id, false);
 	}
 
 	void PlayerGroupsCmd(APlayerController* player_controller, FString* cmd, bool)
@@ -306,6 +766,44 @@ namespace Permissions
 	void PlayerGroupsRcon(RCONClientConnection* rcon_connection, RCONPacket* rcon_packet, UWorld*)
 	{
 		const FString result = PlayerGroups(rcon_packet->Body);
+		SendRconReply(rcon_connection, rcon_packet->Id, *result);
+	}
+
+	// TribeGroups
+	FString TribeGroups(const FString& cmd)
+	{
+		TArray<FString> parsed;
+		cmd.ParseIntoArray(parsed, L" ", true);
+
+		if (!parsed.IsValidIndex(1))
+			return "";
+
+		int tribe_id;
+
+		try
+		{
+			tribe_id = std::stoull(*parsed[1]);
+		}
+		catch (const std::exception& exception)
+		{
+			Log::GetLog()->error("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
+			return "";
+		}
+
+		return GetTribeGroupsStr("", tribe_id, false);
+	}
+
+	void TribeGroupsCmd(APlayerController* player_controller, FString* cmd, bool)
+	{
+		const auto shooter_controller = static_cast<AShooterPlayerController*>(player_controller);
+
+		const FString result = TribeGroups(*cmd);
+		//AsaApi::GetApiUtils().SendServerMessage(shooter_controller, FColorList::White, *result);
+	}
+
+	void TribeGroupsRcon(RCONClientConnection* rcon_connection, RCONPacket* rcon_packet, UWorld*)
+	{
+		const FString result = TribeGroups(rcon_packet->Body);
 		SendRconReply(rcon_connection, rcon_packet->Id, *result);
 	}
 
@@ -396,21 +894,23 @@ namespace Permissions
 		FString eos_id;
 		player_controller->GetUniqueNetIdAsString(&eos_id);
 
-		TArray<FString> groups = database->GetPlayerGroups(*eos_id);
-
-		FString groups_str;
-
-		for (const FString& current_group : groups)
-		{
-			groups_str += current_group + ", ";
-		}
-
-		if (!groups_str.IsEmpty())
-			groups_str.RemoveAt(groups_str.Len() - 2, 2);
+		FString groups_str = GetPlayerGroupsStr(*eos_id, true);
 
 		AsaApi::GetApiUtils().SendChatMessage(player_controller, L"Permissions", *groups_str);
 	}
 
+	void DatabaseSync()
+	{
+		if (difftime(time(0), lastDatabaseSyncTime) >= SyncFrequency)
+		{
+			pool.push_task(
+				[]() { database->Init(); }
+			);
+
+			lastDatabaseSyncTime = time(0);
+		}
+	}
+	
 	void ReadConfig()
 	{
 		const std::string config_path = GetConfigPath();
@@ -430,6 +930,11 @@ namespace Permissions
 		try
 		{
 			ReadConfig();
+			SyncFrequency = config.value("ClusterSyncTime", 60);
+			if (SyncFrequency < 20)
+			{
+				SyncFrequency = 20;
+			}
 		}
 		catch (const std::exception& error)
 		{
@@ -439,22 +944,30 @@ namespace Permissions
 
 		if (config.value("Database", "sqlite") == "mysql")
 		{
-			database = std::make_unique<MySql>(config.value("MysqlHost", ""),
+			database = std::make_unique<MySql>(
+				config.value("MysqlHost", ""),
 			                                   config.value("MysqlUser", ""),
 			                                   config.value("MysqlPass", ""),
 			                                   config.value("MysqlDB", ""),
+				config.value("MysqlPort", 3306),
 			                                   config.value("MysqlPlayersTable", "Players"),
-			                                   config.value("MysqlGroupsTable", "PermissionGroups"));
+				config.value("MysqlGroupsTable", "PermissionGroups"),
+				config.value("MysqlTribesTable", "TribePermissions"));
 		}
 		else
 		{
 			database = std::make_unique<SqlLite>(config.value("DbPathOverride", ""));
 		}
 
+		database->Init();
+		lastDatabaseSyncTime = time(0);
+
 		Hooks::Init();
 
 		AsaApi::GetCommands().AddConsoleCommand("Permissions.Add", &AddPlayerToGroupCmd);
 		AsaApi::GetCommands().AddConsoleCommand("Permissions.Remove", &RemovePlayerFromGroupCmd);
+		AsaApi::GetCommands().AddConsoleCommand("Permissions.RemoveTimed", &RemovePlayerFromTimedGroupCmd);
+		AsaApi::GetCommands().AddConsoleCommand("Permissions.AddTimed", &AddPlayerToTimedGroupCmd);
 		AsaApi::GetCommands().AddConsoleCommand("Permissions.AddGroup", &AddGroupCmd);
 		AsaApi::GetCommands().AddConsoleCommand("Permissions.RemoveGroup", &RemoveGroupCmd);
 		AsaApi::GetCommands().AddConsoleCommand("Permissions.Grant", &GroupGrantPermissionCmd);
@@ -463,8 +976,16 @@ namespace Permissions
 		AsaApi::GetCommands().AddConsoleCommand("Permissions.GroupPermissions", &GroupPermissionsCmd);
 		AsaApi::GetCommands().AddConsoleCommand("Permissions.ListGroups", &ListGroupsCmd);
 
+		AsaApi::GetCommands().AddConsoleCommand("Permissions.AddTribe", &AddTribeToGroupCmd);
+		AsaApi::GetCommands().AddConsoleCommand("Permissions.RemoveTribe", &RemoveTribeFromGroupCmd);
+		AsaApi::GetCommands().AddConsoleCommand("Permissions.RemoveTribeTimed", &RemoveTribeFromTimedGroupCmd);
+		AsaApi::GetCommands().AddConsoleCommand("Permissions.AddTribeTimed", &AddTribeToTimedGroupCmd);
+		AsaApi::GetCommands().AddConsoleCommand("Permissions.TribeGroups", &TribeGroupsCmd);
+
 		AsaApi::GetCommands().AddRconCommand("Permissions.Add", &AddPlayerToGroupRcon);
 		AsaApi::GetCommands().AddRconCommand("Permissions.Remove", &RemovePlayerFromGroupRcon);
+		AsaApi::GetCommands().AddRconCommand("Permissions.AddTimed", &AddPlayerToTimedGroupRcon);
+		AsaApi::GetCommands().AddRconCommand("Permissions.RemoveTimed", &RemovePlayerFromTimedGroupRcon);
 		AsaApi::GetCommands().AddRconCommand("Permissions.AddGroup", &AddGroupRcon);
 		AsaApi::GetCommands().AddRconCommand("Permissions.RemoveGroup", &RemoveGroupRcon);
 		AsaApi::GetCommands().AddRconCommand("Permissions.Grant", &GroupGrantPermissionRcon);
@@ -473,7 +994,17 @@ namespace Permissions
 		AsaApi::GetCommands().AddRconCommand("Permissions.GroupPermissions", &GroupPermissionsRcon);
 		AsaApi::GetCommands().AddRconCommand("Permissions.ListGroups", &ListGroupsRcon);
 
+		AsaApi::GetCommands().AddRconCommand("Permissions.AddTribe", &AddTribeToGroupRcon);
+		AsaApi::GetCommands().AddRconCommand("Permissions.RemoveTribe", &RemoveTribeFromGroupRcon);
+		AsaApi::GetCommands().AddRconCommand("Permissions.AddTribeTimed", &AddTribeToTimedGroupRcon);
+		AsaApi::GetCommands().AddRconCommand("Permissions.RemoveTribeTimed", &RemoveTribeFromTimedGroupRcon);
+		AsaApi::GetCommands().AddRconCommand("Permissions.TribeGroups", &TribeGroupsRcon);
+
 		AsaApi::GetCommands().AddChatCommand("/groups", &ShowMyGroupsChat);
+
+		AsaApi::GetCommands().AddOnTimerCallback("DatabaseSync", &DatabaseSync);
+
+		pool.sleep_duration = 20000; // "if not set, default is 1ms which is overkill and will increase cpu usage a lot" - @Lethal 2021
 	}
 }
 

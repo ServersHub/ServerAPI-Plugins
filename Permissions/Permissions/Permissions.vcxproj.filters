@@ -13,6 +13,9 @@
     <Filter Include="Private\Sqlite">
       <UniqueIdentifier>{b090c175-c079-441f-bf0c-01d206683d33}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Configs">
+      <UniqueIdentifier>{668b71d5-a748-458c-b24a-1aded7d855f3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Private\Main.h">
@@ -41,6 +44,9 @@
     </ClInclude>
     <ClInclude Include="Public\Permissions.h">
       <Filter>Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Private\CachedPermission.h">
+      <Filter>Private</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -77,5 +83,13 @@
     <ClCompile Include="..\Includes\sqlite3\sqlite3.c">
       <Filter>Private\Sqlite</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Configs\config.json">
+      <Filter>Configs</Filter>
+    </None>
+    <None Include="..\Configs\PluginInfo.json">
+      <Filter>Configs</Filter>
+    </None>
   </ItemGroup>
 </Project>

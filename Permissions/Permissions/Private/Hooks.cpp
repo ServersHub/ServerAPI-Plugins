@@ -30,16 +30,8 @@ namespace Permissions::Hooks
 		FString eos_id;
 		player_controller->GetUniqueNetIdAsString(&eos_id);
 
-		//if (!player_controller->ActorHasTag(TempAdmin))
-		//{
-			if (!IsPlayerInGroup(*eos_id, "Admins"))
-			{
-				FString Admins("Admins");
-				database->AddPlayerToGroup(*eos_id, Admins);
-			}
-		//}
-		//else
-			//player_controller->TagsField().Remove(TempAdmin);
+			if (!IsPlayerInGroup(eos_id, "Admins"))
+				database->AddPlayerToGroup(*eos_id, "Admins");
 
 		AShooterPlayerController_ClientNotifyAdmin_original(player_controller);
 	}
