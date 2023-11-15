@@ -28,9 +28,9 @@ namespace Permissions
 
 	FTribeData* GetTribeData(AShooterPlayerController* playerController)
 	{
-		auto playerState = reinterpret_cast<AShooterPlayerState*>(playerController->PlayerStateField().Get());
-		if (playerState)
-			return &playerState->MyTribeDataField();
+		//auto playerState = reinterpret_cast<AShooterPlayerState*>(playerController->PlayerStateField().Get());
+		//if (playerState)
+		//	return &playerState->MyTribeDataField();
 
 		return nullptr;
 	}
@@ -39,13 +39,13 @@ namespace Permissions
 	{
 		int tribeId = 0;
 
-		auto playerState = reinterpret_cast<AShooterPlayerState*>(playerController->PlayerStateField().Get());
-		if (playerState)
-		{
-			FTribeData* tribeData = GetTribeData(playerController);
-			if (tribeData)
-				tribeId = tribeData->TribeIDField();
-		}
+		//auto playerState = reinterpret_cast<AShooterPlayerState*>(playerController->PlayerStateField().Get());
+		//if (playerState)
+		//{
+		//	FTribeData* tribeData = GetTribeData(playerController);
+		//	if (tribeData)
+		//		tribeId = tribeData->TribeIDField();
+		//}
 
 		return tribeId;
 	}
@@ -878,6 +878,7 @@ namespace Permissions
 		const auto shooter_controller = static_cast<AShooterPlayerController*>(player_controller);
 
 		const FString result = ListGroups();
+		Log::GetLog()->info(fmt::format("ListGroupsCmd: {}", result.ToString()));
 		//AsaApi::GetApiUtils().SendServerMessage(shooter_controller, FColorList::White, *result);
 	}
 
