@@ -94,7 +94,7 @@ namespace Permissions
 	{
 		auto world = AsaApi::GetApiUtils().GetWorld();
 		TArray<FString> groups = database->GetPlayerGroups(eos_id);
-		auto shooter_pc = AsaApi::GetApiUtils().FindPlayerFromSteamId(eos_id);
+		auto shooter_pc = AsaApi::GetApiUtils().FindPlayerFromEOSID(eos_id);
 		int tribeId = -1;
 		bool isOnline = false;
 		if (shooter_pc) {
