@@ -28,26 +28,15 @@ namespace Permissions
 
 	FTribeData* GetTribeData(AShooterPlayerController* playerController)
 	{
+		FTribeData* tribeData = nullptr;
+
+		//AsaApi::GetApiUtils().GetShooterGameMode()->GetTribeData(tribeData, playerController->TargetingTeamField());
+
 		//auto playerState = reinterpret_cast<AShooterPlayerState*>(playerController->PlayerStateField().Get());
 		//if (playerState)
 		//	return &playerState->MyTribeDataField();
 
-		return nullptr;
-	}
-
-	int GetTribeId(AShooterPlayerController* playerController)
-	{
-		int tribeId = 0;
-
-		//auto playerState = reinterpret_cast<AShooterPlayerState*>(playerController->PlayerStateField().Get());
-		//if (playerState)
-		//{
-		//	FTribeData* tribeData = GetTribeData(playerController);
-		//	if (tribeData)
-		//		tribeId = tribeData->TribeIDField();
-		//}
-
-		return tribeId;
+		return tribeData;
 	}
 
 	TArray<FString> GetTribeDefaultGroups(FTribeData* tribeData) {
