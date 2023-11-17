@@ -28,15 +28,25 @@ namespace Permissions
 
 	FTribeData* GetTribeData(AShooterPlayerController* playerController)
 	{
-		FTribeData* tribeData = nullptr;
+		//FTribeData* tribeData = new FTribeData();
 
-		//AsaApi::GetApiUtils().GetShooterGameMode()->GetTribeData(tribeData, playerController->TargetingTeamField());
+		if (!playerController)
+		{
+			Log::GetLog()->error("({} {}) playerController is null", __FILE__, __FUNCTION__);
+			return nullptr;
+		}
 
-		//auto playerState = reinterpret_cast<AShooterPlayerState*>(playerController->PlayerStateField().Get());
-		//if (playerState)
-		//	return &playerState->MyTribeDataField();
+		int tribeid = playerController->TargetingTeamField();
+		Log::GetLog()->info(tribeid);
+		AShooterGameMode* gm = AsaApi::GetApiUtils().GetShooterGameMode();
+		if (gm)
+		{
+			//Log::GetLog()->info("({} {}) gm", __FILE__, __FUNCTION__);
+			//gm->GetTribeData(tribeData, tribeid);
+		}
 
-		return tribeData;
+		//return tribeData;
+		return nullptr;
 	}
 
 	TArray<FString> GetTribeDefaultGroups(FTribeData* tribeData) {
@@ -682,39 +692,55 @@ namespace Permissions
 			if (groups_str.Len() > 0)
 				groups_str += "\n";
 			groups_str += current_group.GroupName;
-			if (current_group.DelayUntilTime > 0 && current_group.DelayUntilTime > nowSecs) {
+			if (current_group.DelayUntilTime > 0 && current_group.DelayUntilTime > nowSecs) 
+			{
 				auto diff = current_group.DelayUntilTime - nowSecs;
 				groups_str += FString::Format(" - Activates in {}", getTimeLeft(diff, 2));
 			}
-			else if (current_group.ExpireAtTime > nowSecs) {
+			else if (current_group.ExpireAtTime > nowSecs) 
+			{
 				auto diff = current_group.ExpireAtTime - nowSecs;
 				groups_str += FString::Format(" - Ends in {}", getTimeLeft(diff, 2));
 			}
 		}
 
 		auto world = AsaApi::GetApiUtils().GetWorld();
-		if (world) {
+		if (world) 
+		{
 			const auto& player_controllers = world->PlayerControllerListField();
 			for (TWeakObjectPtr<APlayerController> player_controller : player_controllers)
 			{
-				AShooterPlayerController* shooter_pc = static_cast<AShooterPlayerController*>(player_controller.Get());
-
-				auto tribeData = Permissions::GetTribeData(shooter_pc);
-				if (tribeData) {
-					auto tribeId = tribeData->TribeIDField();
-					if (tribeId > 0) {
-						auto defaultTribeGroups = GetTribeDefaultGroups(tribeData);
-						FString defaults = "";
-						for (auto tribeGroup : defaultTribeGroups) {
-							if (defaults.Len() > 0) defaults += ", ";
-							defaults += tribeGroup;
+				APlayerController* pc = player_controller.Get();
+				if (pc)
+				{
+					AShooterPlayerController* shooter_pc = static_cast<AShooterPlayerController*>(pc);
+					if (shooter_pc)
+					{
+						auto tribeData = Permissions::GetTribeData(shooter_pc);
+						if (tribeData) 
+						{
+							auto tribeId = tribeData->TribeIDField();
+							if (tribeId > 0) 
+							{
+								auto defaultTribeGroups = GetTribeDefaultGroups(tribeData);
+								FString defaults = "";
+								for (auto tribeGroup : defaultTribeGroups)
+								{
+									if (defaults.Len() > 0) defaults += ", ";
+									defaults += tribeGroup;
+								}
+								FString tribeStr = GetTribeGroupsStr(defaults, tribeId, forChat);
+								if (groups_str.Len() > 0 && tribeStr.Len() > 0)
+									groups_str += "\n";
+								groups_str += tribeStr;
+							}
 						}
-						FString tribeStr = GetTribeGroupsStr(defaults, tribeId, forChat);
-						if (groups_str.Len() > 0 && tribeStr.Len() > 0)
-							groups_str += "\n";
-						groups_str += tribeStr;
 					}
+					else
+						Log::GetLog()->error("({} {}) AShooterPlayerController is null", __FILE__, __FUNCTION__);
 				}
+				else
+					Log::GetLog()->error("({} {}) APlayerController is null", __FILE__, __FUNCTION__);
 			}
 		}
 
