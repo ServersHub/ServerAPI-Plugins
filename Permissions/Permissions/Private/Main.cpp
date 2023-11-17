@@ -28,30 +28,21 @@ namespace Permissions
 
 	FTribeData* GetTribeData(AShooterPlayerController* playerController)
 	{
-		//FTribeData* tribeData = new FTribeData();
-
 		if (!playerController)
-		{
-			Log::GetLog()->error("({} {}) playerController is null", __FILE__, __FUNCTION__);
 			return nullptr;
-		}
 
-		int tribeid = playerController->TargetingTeamField();
-		Log::GetLog()->info(tribeid);
-		AShooterGameMode* gm = AsaApi::GetApiUtils().GetShooterGameMode();
-		if (gm)
-		{
-			//Log::GetLog()->info("({} {}) gm", __FILE__, __FUNCTION__);
-			//gm->GetTribeData(tribeData, tribeid);
-		}
+		auto playerState = reinterpret_cast<AShooterPlayerState*>(playerController->PlayerStateField().Get());
+		if (playerState)
+			return &playerState->MyTribeDataField();
 
-		//return tribeData;
 		return nullptr;
 	}
 
-	TArray<FString> GetTribeDefaultGroups(FTribeData* tribeData) {
+	TArray<FString> GetTribeDefaultGroups(FTribeData* tribeData) 
+	{
 		TArray<FString> groups;
-		if (tribeData) {
+		if (tribeData) 
+		{
 			auto world = AsaApi::GetApiUtils().GetWorld();
 			auto tribeId = tribeData->TribeIDField();
 			auto Tribemates = tribeData->MembersPlayerDataIDField();
@@ -63,9 +54,8 @@ namespace Permissions
 				if (pc)
 				{
 					auto playerId = pc->GetLinkedPlayerID();
-					if (Tribemates.Contains(playerId)) {
+					if (Tribemates.Contains(playerId))
 						tribematesOnline++;
-					}
 				}
 			}
 			groups.Add(FString::Format("TribeSize:{}", Tribemates.Num()));
@@ -912,6 +902,10 @@ namespace Permissions
 		FString groups_str = GetPlayerGroupsStr(*eos_id, true);
 
 		AsaApi::GetApiUtils().SendChatMessage(player_controller, L"Permissions", *groups_str);
+		
+		//temporary for testing purposes
+		player_controller->ClientServerNotification(&groups_str, FColorList::Green, 1.3f, 10.0f, nullptr, nullptr, 1);
+		player_controller->ClientServerNotificationSingle(&groups_str, FColorList::Red, 1.3f, 10.0f, nullptr, nullptr, 1, 1);
 	}
 
 	void DatabaseSync()
