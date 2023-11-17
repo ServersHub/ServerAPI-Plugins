@@ -902,10 +902,6 @@ namespace Permissions
 		FString groups_str = GetPlayerGroupsStr(*eos_id, true);
 
 		AsaApi::GetApiUtils().SendChatMessage(player_controller, L"Permissions", *groups_str);
-		
-		//temporary for testing purposes
-		player_controller->ClientServerNotification(&groups_str, FColorList::Green, 1.3f, 10.0f, nullptr, nullptr, 1);
-		player_controller->ClientServerNotificationSingle(&groups_str, FColorList::Red, 1.3f, 10.0f, nullptr, nullptr, 1, 1);
 	}
 
 	void DatabaseSync()
