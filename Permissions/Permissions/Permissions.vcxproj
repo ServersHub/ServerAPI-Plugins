@@ -133,6 +133,8 @@
     </Link>
     <PostBuildEvent>
       <Command>xcopy /I  /Y "$(TargetDir)Permissions.lib" "$(SolutionDir)out_lib\"
+xcopy /I  /Y "$(TargetDir)Permissions.lib" "$(SolutionDir)..\..\ARK-API-Stable-Libs\"
+xcopy /I  /Y "$(TargetDir)Permissions.lib" "$(SolutionDir)..\..\ARK-API-Stable-Libs\1.00\"
 
 copy "$(SolutionDir)Configs\*.*" "F:\ASA-Dedicated\asa-server\ShooterGame\Binaries\Win64\ArkApi\Plugins\$(ProjectName)\" /y
 copy "$(SolutionDir)$(PlatformName)\$(ConfigurationName)\$(ProjectName).dll" "F:\ASA-Dedicated\asa-server\ShooterGame\Binaries\Win64\ArkApi\Plugins\$(ProjectName)\" /y
