@@ -1,6 +1,3 @@
-#define _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-
 #include "json.hpp"
 
 #include "Database/SqlLiteDB.h"
