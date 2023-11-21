@@ -155,7 +155,7 @@ namespace ArkShop::StoreSell
 
 	// Chat callbacks
 
-	void ChatSell(AShooterPlayerController* player_controller, FString* message, int)
+	void ChatSell(AShooterPlayerController* player_controller, FString* message, int, int)
 	{
 		TArray<FString> parsed;
 		message->ParseIntoArray(parsed, L" ", true);
@@ -186,7 +186,7 @@ namespace ArkShop::StoreSell
 		}
 	}
 
-	void ShowItems(AShooterPlayerController* player_controller, FString* message, int)
+	void ShowItems(AShooterPlayerController* player_controller, FString* message, int, int)
 	{
 		if (AsaApi::Tools::IsPluginLoaded("ArkShopUI"))
 			return;

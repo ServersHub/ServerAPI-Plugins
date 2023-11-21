@@ -436,7 +436,7 @@ namespace ArkShop::Store
 
 	// Chat callbacks
 
-	void ChatBuy(AShooterPlayerController* player_controller, FString* message, int)
+	void ChatBuy(AShooterPlayerController* player_controller, FString* message, int, int)
 	{
 		if (!IsStoreEnabled(player_controller))
 			return;
@@ -472,7 +472,7 @@ namespace ArkShop::Store
 		}
 	}
 
-	void ShowItems(AShooterPlayerController* player_controller, FString* message, int)
+	void ShowItems(AShooterPlayerController* player_controller, FString* message, int, int)
 	{
 		if (AsaApi::Tools::IsPluginLoaded("ArkShopUI"))
 		{
@@ -592,7 +592,7 @@ namespace ArkShop::Store
 		return dataLower.find(toSearchLower, pos) != std::wstring::npos;
 	}
 
-	void FindItems(AShooterPlayerController* player_controller, FString* message, int)
+	void FindItems(AShooterPlayerController* player_controller, FString* message, int, int)
 	{
 		std::wstring searchTerm;
 		TArray<FString> parsed;

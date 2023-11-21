@@ -763,7 +763,7 @@ void ReloadConfigRcon(RCONClientConnection* rcon_connection, RCONPacket* rcon_pa
 	rcon_connection->SendMessageW(rcon_packet->Id, 0, &reply);
 }
 
-void ShowHelp(AShooterPlayerController* player_controller, FString* /*unused*/, int)
+void ShowHelp(AShooterPlayerController* player_controller, FString* /*unused*/, int, int)
 {
 	const FString help = ArkShop::GetText("HelpMessage");
 	if (help != AsaApi::Tools::Utf8Decode("No message").c_str())

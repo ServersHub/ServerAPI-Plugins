@@ -448,7 +448,7 @@ namespace ArkShop::Kits
 
 	// Chat callbacks
 
-	void Kit(AShooterPlayerController* player_controller, FString* message, int)
+	void Kit(AShooterPlayerController* player_controller, FString* message, int, int)
 	{
 		if (!IsStoreEnabled(player_controller))
 			return;
@@ -480,7 +480,7 @@ namespace ArkShop::Kits
 		}
 	}
 
-	void BuyKit(AShooterPlayerController* player_controller, FString* message, int)
+	void BuyKit(AShooterPlayerController* player_controller, FString* message, int, int)
 	{
 		if (AsaApi::IApiUtils::IsPlayerDead(player_controller))
 			return;

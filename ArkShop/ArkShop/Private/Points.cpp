@@ -69,7 +69,7 @@ namespace ArkShop::Points
 	/**
 	 * \brief Send points to the other player (using character name)
 	 */
-	void Trade(AShooterPlayerController* player_controller, FString* message, int)
+	void Trade(AShooterPlayerController* player_controller, FString* message, int, int)
 	{
 		const FString& sender_eos_id = AsaApi::IApiUtils::GetEOSIDFromController(player_controller);
 
@@ -229,7 +229,7 @@ namespace ArkShop::Points
 		}
 	}
 
-	void PrintPoints(AShooterPlayerController* player_controller, FString* /*unused*/, int)
+	void PrintPoints(AShooterPlayerController* player_controller, FString* /*unused*/, int, int)
 	{
 		const FString& eos_id = AsaApi::IApiUtils::GetEOSIDFromController(player_controller);
 
