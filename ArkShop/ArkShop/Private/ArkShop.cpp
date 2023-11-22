@@ -552,7 +552,9 @@ bool ArkShop::ShouldPreventStoreUse(AShooterPlayerController* player_controller)
 			try
 			{
 				FString buffClassString = "Blueprint'/Game/Genesis2/Dinos/BrainSlug/Buff_BrainSlugPostProccess.Buff_BrainSlugPostProccess'";
-				NoglinBuffClass = UVictoryCore::BPLoadClass(&buffClassString);
+				TSubclassOf<UObject> archetype;
+				UVictoryCore::StringReferenceToClass(&archetype, &buffClassString);
+				NoglinBuffClass = archetype.uClass;
 			}
 			catch (const std::exception& error)
 			{
@@ -566,7 +568,9 @@ bool ArkShop::ShouldPreventStoreUse(AShooterPlayerController* player_controller)
 			try
 			{
 				FString buffClassString = "Blueprint'/Game/Genesis2/Dinos/BrainSlug/Buff_BrainSlug_HumanControl.Buff_BrainSlug_HumanControl'";
-				NoglinBuffClass2 = UVictoryCore::BPLoadClass(&buffClassString);
+				TSubclassOf<UObject> archetype;
+				UVictoryCore::StringReferenceToClass(&archetype, &buffClassString);
+				NoglinBuffClass2 = archetype.uClass;
 			}
 			catch (const std::exception& error)
 			{
@@ -580,7 +584,9 @@ bool ArkShop::ShouldPreventStoreUse(AShooterPlayerController* player_controller)
 			try
 			{
 				FString buffClassString = "Blueprint'/Game/Genesis2/Dinos/BrainSlug/Buff_BrainSlugControl.Buff_BrainSlugControl'";
-				NoglinBuffClass3 = UVictoryCore::BPLoadClass(&buffClassString);
+				TSubclassOf<UObject> archetype;
+				UVictoryCore::StringReferenceToClass(&archetype, &buffClassString);
+				NoglinBuffClass3 = archetype.uClass;
 			}
 			catch (const std::exception& error)
 			{

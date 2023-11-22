@@ -48,7 +48,10 @@ namespace ArkShop::Store
 
 				FString fblueprint(blueprint.c_str());
 
-				UClass* itemClass = UVictoryCore::BPLoadClass(&fblueprint);
+				TSubclassOf<UObject> archetype;
+				UVictoryCore::StringReferenceToClass(&archetype, &fblueprint);
+				auto itemClass = archetype.uClass;
+
 				bool stacksInOne = false;
 				if (itemClass)
 				{

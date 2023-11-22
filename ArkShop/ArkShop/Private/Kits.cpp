@@ -724,8 +724,7 @@ namespace ArkShop::Kits
 
 		commands.AddRconCommand("ChangeKitAmount", &ChangeKitAmountRcon);
 
-		AsaApi::GetHooks().SetHook("AShooterCharacter.AuthPostSpawnInit()", &Hook_AShooterCharacter_AuthPostSpawnInit,
-			&AShooterCharacter_AuthPostSpawnInit_original);
+		AsaApi::GetHooks().SetHook("AShooterCharacter.AuthPostSpawnInit()", &Hook_AShooterCharacter_AuthPostSpawnInit, &AShooterCharacter_AuthPostSpawnInit_original);
 	}
 
 	void Unload()
@@ -740,7 +739,6 @@ namespace ArkShop::Kits
 
 		commands.RemoveRconCommand("ChangeKitAmount");
 
-		AsaApi::GetHooks().DisableHook("AShooterCharacter.AuthPostSpawnInit()",
-			&Hook_AShooterCharacter_AuthPostSpawnInit);
+		AsaApi::GetHooks().DisableHook("AShooterCharacter.AuthPostSpawnInit()", &Hook_AShooterCharacter_AuthPostSpawnInit);
 	}
 } // namespace Kits // namespace ArkShop

@@ -21,7 +21,7 @@ public:
 
 			db_ << "create table if not exists Players ("
 				"Id integer primary key autoincrement not null,"
-				"EosId integer default 0,"
+				"EosId text not null unique,"
 				"Kits text default '{}',"
 				"Points integer default 0,"
 				"TotalSpent integer default 0"

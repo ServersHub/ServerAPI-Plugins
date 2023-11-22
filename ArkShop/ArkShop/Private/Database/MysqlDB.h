@@ -31,7 +31,7 @@ public:
 
 			result = db_.query(fmt::format("CREATE TABLE IF NOT EXISTS {} ("
 				"Id INT NOT NULL AUTO_INCREMENT,"
-				"EosId BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,"
+				"EosId VARCHAR(50) NOT NULL,"
 				"Kits LONGTEXT NOT NULL,"
 				"Points INT DEFAULT 0,"
 				"TotalSpent INT DEFAULT 0,"
