@@ -87,10 +87,11 @@ namespace ArkShop::Store
 									0,
 									false,
 									false,
-									false
+									true
 								)
 							);
 						}
+						// currently broken as item info returns garbage
 						//ApplyItemStats(out_items, armor, durability, damage);
 					}
 					else

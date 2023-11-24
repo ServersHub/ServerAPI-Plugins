@@ -42,8 +42,6 @@ public:
 			{
 				Log::GetLog()->critical("({} {}) Failed to create table!", __FILE__, __FUNCTION__);
 			}
-
-			upgradeDatabase();
 		}
 		catch (const std::exception& exception)
 		{
@@ -55,7 +53,7 @@ public:
 	{
 		try
 		{
-			return db_.query(fmt::format("INSERT INTO {} (EosId, Kits) VALUES ({}, '{}')", table_players_, eos_id.ToString(), "{}"));
+			return db_.query(fmt::format("INSERT INTO {} (EosId, Kits) VALUES ('{}', '{}')", table_players_, eos_id.ToString(), "{}"));
 		}
 		catch (const std::exception& exception)
 		{
@@ -231,25 +229,4 @@ public:
 private:
 	daotk::mysql::connection db_;
 	std::string table_players_;
-
-	void upgradeDatabase()
-	{
-		try
-		{
-			db_.query(fmt::format("ALTER TABLE `{}` CHANGE COLUMN `Kits` `Kits` LONGTEXT NOT NULL AFTER `EosId`;", table_players_));
-		}
-		catch (const std::exception&)
-		{
-			Log::GetLog()->critical("({} {}) Failed to update Kits Column!", __FILE__, __FUNCTION__);
-		}
-
-		try
-		{
-			db_.query(fmt::format("ALTER TABLE `{}` CHANGE COLUMN `EosId` `EosId` BIGINT(20) UNSIGNED NOT NULL DEFAULT '0' AFTER `Id`;", table_players_));
-		}
-		catch (const std::exception&)
-		{
-			Log::GetLog()->critical("({} {}) Failed to update EosId Column!", __FILE__, __FUNCTION__);
-		}
-	}
 };

@@ -14,6 +14,7 @@
 #include "StoreSell.h"
 #include "TimedRewards.h"
 #include <ArkShopUIHelper.h>
+#include "Helpers.h"
 
 #pragma comment(lib, "AsaApi.lib")
 #pragma comment(lib, "Permissions.lib")
@@ -88,247 +89,215 @@ float ArkShop::getStatValue(float StatModifier, float InitialValueConstant, floa
 	return ItemStatValue;
 }
 
-//void ArkShop::ApplyItemStats(TArray<UPrimalItem*> items, int armor, int durability, int damage)
-//{
-//	if (armor > 0 || durability > 0 || damage > 0)
-//	{
-//		for (UPrimalItem* item : items)
-//		{
-//			bool updated = false;
-//
-//			static int statInfoStructSize = GetStructSize<FItemStatInfo>();
-//
-//			if (armor > 0)
-//			{
-//				FItemStatInfo* itemstat = static_cast<FItemStatInfo*>(FMemory::Malloc(0x0024));
-//				RtlSecureZeroMemory(itemstat, 0x0024);
-//				item->GetItemStatInfo(itemstat, EPrimalItemStat::Armor);
-//
-//				if (itemstat->bUsed()())
-//				{
-//					float newStat = 0.f;
-//					bool percent = itemstat->bDisplayAsPercent()();
-//
-//					newStat = getStatValue(armor, itemstat->InitialValueConstantField(), itemstat->RandomizerRangeMultiplierField(), itemstat->StateModifierScaleField(), percent);
-//
-//					if (newStat >= 65536.f)
-//						newStat = 65535;
-//
-//					item->ItemStatValuesField()()[EPrimalItemStat::Armor] = newStat;
-//					updated = true;
-//				}
-//
-//				FMemory::Free(itemstat);
-//			}
-//
-//			if (durability > 0)
-//			{
-//				FItemStatInfo* itemstat = static_cast<FItemStatInfo*>(FMemory::Malloc(0x0024));
-//				RtlSecureZeroMemory(itemstat, 0x0024);
-//				item->GetItemStatInfo(itemstat, EPrimalItemStat::MaxDurability);
-//
-//				if (itemstat->bUsed()())
-//				{
-//					float newStat = 0.f;
-//					bool percent = itemstat->bDisplayAsPercent()();
-//
-//					newStat = getStatValue(durability, itemstat->InitialValueConstantField(), itemstat->RandomizerRangeMultiplierField(), itemstat->StateModifierScaleField(), percent) + 1;
-//
-//					if (newStat >= 65536.f)
-//						newStat = 65535;
-//
-//					item->ItemStatValuesField()()[EPrimalItemStat::MaxDurability] = newStat;
-//					item->ItemDurabilityField() = item->GetItemStatModifier(EPrimalItemStat::MaxDurability);
-//					updated = true;
-//				}
-//
-//				FMemory::Free(itemstat);
-//			}
-//
-//			if (damage > 0)
-//			{
-//				FItemStatInfo* itemstat = static_cast<FItemStatInfo*>(FMemory::Malloc(0x0024));
-//				RtlSecureZeroMemory(itemstat, 0x0024);
-//				item->GetItemStatInfo(itemstat, EPrimalItemStat::WeaponDamagePercent);
-//
-//				if (itemstat->bUsed()())
-//				{
-//					float newStat = 0.f;
-//					bool percent = itemstat->bDisplayAsPercent()();
-//
-//					newStat = getStatValue(damage, itemstat->InitialValueConstantField(), itemstat->RandomizerRangeMultiplierField(), itemstat->StateModifierScaleField(), percent);
-//
-//					if (newStat >= 65536.f)
-//						newStat = 65535;
-//
-//					item->SetItemStatValues(EPrimalItemStat::WeaponDamagePercent, newStat);
-//					updated = true;
-//				}
-//
-//				FMemory::Free(itemstat);
-//			}
-//
-//			if (updated)
-//				item->UpdatedItem(false);
-//		}
-//	}
-//}
+void ArkShop::ApplyItemStats(TArray<UPrimalItem*> items, int armor, int durability, int damage)
+{
+	if (armor > 0 || durability > 0 || damage > 0)
+	{
+		for (UPrimalItem* item : items)
+		{
+			bool updated = false;
 
-//Builds custom data for cryopod
-//FCustomItemData ArkShop::GetDinoCustomItemData(APrimalDinoCharacter* dino, UPrimalItem* saddle, bool Modded)
-//{
-//	FCustomItemData customItemData;
-//
-//	if (!Modded)
-//	{
-//		FARKDinoData dinoData;
-//		dino->GetDinoData(&dinoData);
-//
-//		//
-//		// Custom Data Name
-//		//
-//		customItemData.CustomDataName = FName("Dino", EFindName::FNAME_Add);
-//
-//		// one time use settings
-//		customItemData.CustomDataNames.Add(FName("MissionTemporary", EFindName::FNAME_Add));
-//		customItemData.CustomDataNames.Add(FName("None", EFindName::FNAME_Find));
-//
-//		//
-//		// Custom Data Floats
-//		//
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->CurrentStatusValuesField()()[EPrimalCharacterStatusValue::Health]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->CurrentStatusValuesField()()[EPrimalCharacterStatusValue::Stamina]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->CurrentStatusValuesField()()[EPrimalCharacterStatusValue::Torpidity]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->CurrentStatusValuesField()()[EPrimalCharacterStatusValue::Oxygen]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->CurrentStatusValuesField()()[EPrimalCharacterStatusValue::Food]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->CurrentStatusValuesField()()[EPrimalCharacterStatusValue::Water]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->CurrentStatusValuesField()()[EPrimalCharacterStatusValue::Temperature]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->CurrentStatusValuesField()()[EPrimalCharacterStatusValue::Weight]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->CurrentStatusValuesField()()[EPrimalCharacterStatusValue::MeleeDamageMultiplier]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->CurrentStatusValuesField()()[EPrimalCharacterStatusValue::SpeedMultiplier]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->CurrentStatusValuesField()()[EPrimalCharacterStatusValue::TemperatureFortitude]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->CurrentStatusValuesField()()[EPrimalCharacterStatusValue::CraftingSpeedMultiplier]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->MaxStatusValuesField()()[EPrimalCharacterStatusValue::Health]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->MaxStatusValuesField()()[EPrimalCharacterStatusValue::Stamina]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->MaxStatusValuesField()()[EPrimalCharacterStatusValue::Torpidity]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->MaxStatusValuesField()()[EPrimalCharacterStatusValue::Oxygen]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->MaxStatusValuesField()()[EPrimalCharacterStatusValue::Food]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->MaxStatusValuesField()()[EPrimalCharacterStatusValue::Water]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->MaxStatusValuesField()()[EPrimalCharacterStatusValue::Temperature]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->MaxStatusValuesField()()[EPrimalCharacterStatusValue::Weight]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->MaxStatusValuesField()()[EPrimalCharacterStatusValue::MeleeDamageMultiplier]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->MaxStatusValuesField()()[EPrimalCharacterStatusValue::SpeedMultiplier]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->MaxStatusValuesField()()[EPrimalCharacterStatusValue::TemperatureFortitude]);
-//		customItemData.CustomDataFloats.Add(dino->MyCharacterStatusComponentField()->MaxStatusValuesField()()[EPrimalCharacterStatusValue::CraftingSpeedMultiplier]);
-//		customItemData.CustomDataFloats.Add(dino->bIsFemale()());
-//
-//		//
-//		// Custom Data Doubles
-//		//
-//		auto t1 = AsaApi::GetApiUtils().GetShooterGameMode()->GetWorld()->TimeSecondsField();
-//		customItemData.CustomDataDoubles.Doubles.Add(t1);
-//		customItemData.CustomDataDoubles.Doubles.Add(dino->BabyNextCuddleTimeField() - t1);
-//		customItemData.CustomDataDoubles.Doubles.Add(dino->NextAllowedMatingTimeField());
-//
-//		const float d1 = static_cast<float>(dino->RandomMutationsMaleField());
-//		const double d2 = static_cast<double>(d1);
-//		customItemData.CustomDataDoubles.Doubles.Add(d2);
-//
-//		const float d3 = static_cast<float>(dino->RandomMutationsFemaleField());
-//		const double d4 = static_cast<double>(d3);
-//		customItemData.CustomDataDoubles.Doubles.Add(d4);
-//
-//		auto stat = dino->MyCharacterStatusComponentField();
-//		if (stat)
-//		{
-//			const double d5 = static_cast<double>(stat->DinoImprintingQualityField());
-//			customItemData.CustomDataDoubles.Doubles.Add(d5);
-//		}
-//
-//		//
-//		// Custom Data Strings
-//		//
-//		FString sNeutered{ "" };
-//		FString sGender{ "Male" };
-//
-//		if (dino->bIsFemale()())
-//			sGender = "FEMALE";
-//
-//		if (dino->bNeutered()())
-//			sNeutered = "NEUTERED";
-//
-//		FString color_indices{};
-//		dino->GetColorSetInidcesAsString(&color_indices);
-//		customItemData.CustomDataStrings.Add(dinoData.DinoNameInMap);
-//		customItemData.CustomDataStrings.Add(dinoData.DinoName);
-//		customItemData.CustomDataStrings.Add(color_indices);
-//		customItemData.CustomDataStrings.Add(sNeutered);
-//		customItemData.CustomDataStrings.Add(sGender);
-//
-//		//
-//		// Custom Data Classes
-//		//
-//		customItemData.CustomDataClasses.Add(dinoData.DinoClass);
-//
-//		//
-//		// Custom Data Bytes
-//		//
-//		FCustomItemByteArray dinoBytes, saddlebytes;
-//		dinoBytes.Bytes = dinoData.DinoData;
-//		customItemData.CustomDataBytes.ByteArrays.Add(dinoBytes);
-//
-//		if (saddle)
-//		{
-//			saddle->GetItemBytes(&saddlebytes.Bytes);
-//			customItemData.CustomDataBytes.ByteArrays.Add(saddlebytes);
-//		}
-//	}
-//	else
-//	{
-//		FARKDinoData dinoData;
-//		dino->GetDinoData(&dinoData);
-//
-//		customItemData.CustomDataName = FName("Dino", EFindName::FNAME_Add);
-//
-//		customItemData.CustomDataFloats.Add(1800.0f);
-//		customItemData.CustomDataFloats.Add(1.0f);
-//
-//		customItemData.CustomDataStrings.Add(dinoData.DinoNameInMap); //0
-//		customItemData.CustomDataStrings.Add(dinoData.DinoName); //1
-//		customItemData.CustomDataStrings.Add(L"0"); //2
-//		customItemData.CustomDataStrings.Add(FString(std::to_string(dino->bNeutered()()))); //3
-//		customItemData.CustomDataStrings.Add(FString(std::to_string(dino->bIsFemale()()))); //4
-//		customItemData.CustomDataStrings.Add(L""); //5
-//		customItemData.CustomDataStrings.Add(L""); //6
-//		customItemData.CustomDataStrings.Add(L"SDOTU"); //7
-//		customItemData.CustomDataStrings.Add(FString(std::to_string(dino->bUsesGender()()))); //8
-//		customItemData.CustomDataStrings.Add(L"0"); //9
-//		customItemData.CustomDataStrings.Add(AsaApi::GetApiUtils().GetBlueprint(dino)); //10
-//		customItemData.CustomDataStrings.Add(L""); //11
-//		customItemData.CustomDataStrings.Add(FString(std::to_string(dino->bPreventMating()()))); //12
-//		customItemData.CustomDataStrings.Add(FString(std::to_string(dino->bUseBabyGestation()()))); //13
-//		customItemData.CustomDataStrings.Add(FString(std::to_string(dino->bDebugBaby()()))); //14
-//		customItemData.CustomDataStrings.Add("0"); //15
-//		customItemData.CustomDataStrings.Add(dino->DescriptiveNameField()); //16
-//
-//		customItemData.CustomDataDoubles.Doubles.Add(AsaApi::GetApiUtils().GetWorld()->TimeSecondsField() * -1);
-//		customItemData.CustomDataDoubles.Doubles.Add(0);
-//
-//		FCustomItemByteArray dinoBytes;
-//		dinoBytes.Bytes = dinoData.DinoData;
-//		customItemData.CustomDataBytes.ByteArrays.Add(dinoBytes); //0
-//
-//		if (saddle)
-//		{
-//			FCustomItemByteArray saddlebytes, emptyBytes;
-//			saddle->GetItemBytes(&saddlebytes.Bytes);
-//			customItemData.CustomDataBytes.ByteArrays.Add(emptyBytes); //1
-//			customItemData.CustomDataBytes.ByteArrays.Add(saddlebytes); //2
-//		}
-//	}
-//
-//	return customItemData;
-//}
+			static int statInfoStructSize = GetStructSize<FItemStatInfo>();
+
+			if (armor > 0)
+			{
+
+				//FItemStatInfo* itemstat = AsaApi::IApiUtils::AllocateStruct<FItemStatInfo>();
+				//item->GetItemStatInfo(itemstat, EPrimalItemStat::Armor);
+				FItemStatInfo* itemstat = &item->ItemStatInfosField()()[EPrimalItemStat::Armor];
+	
+				if (itemstat->bUsed()())
+				{
+					float newStat = 0.f;
+					bool percent = itemstat->bDisplayAsPercent()();
+
+					newStat = getStatValue(armor, itemstat->InitialValueConstantField(), itemstat->RandomizerRangeMultiplierField(), itemstat->StateModifierScaleField(), percent);
+
+					if (newStat >= 65536.f)
+						newStat = 65535;
+
+					item->ItemStatValuesField()()[EPrimalItemStat::Armor] = newStat;
+					updated = true;
+				}
+
+				AsaApi::IApiUtils::FreeStruct(itemstat);
+			}
+
+			if (durability > 0)
+			{
+				//FItemStatInfo* itemstat = AsaApi::IApiUtils::AllocateStruct<FItemStatInfo>();
+				//item->GetItemStatInfo(itemstat, EPrimalItemStat::MaxDurability);
+				FItemStatInfo* itemstat = &item->ItemStatInfosField()()[EPrimalItemStat::MaxDurability];
+
+				/*if (itemstat->bUsed()())
+				{
+					float newStat = 0.f;
+					bool percent = itemstat->bDisplayAsPercent()();
+
+					newStat = getStatValue(durability, itemstat->InitialValueConstantField(), itemstat->RandomizerRangeMultiplierField(), itemstat->StateModifierScaleField(), percent) + 1;
+
+					if (newStat >= 65536.f)
+						newStat = 65535;
+
+					item->ItemStatValuesField()()[EPrimalItemStat::MaxDurability] = newStat;
+					item->ItemDurabilityField() = item->GetItemStatModifier(EPrimalItemStat::MaxDurability);
+					updated = true;
+				}*/
+			}
+
+			if (damage > 0)
+			{
+				FItemStatInfo* itemstat = &item->ItemStatInfosField()()[EPrimalItemStat::WeaponDamagePercent];
+
+				//if (itemstat->bUsed()())
+				//{
+				//	float newStat = 0.f;
+				//	bool percent = itemstat->bDisplayAsPercent()();
+
+				//	newStat = getStatValue(damage, itemstat->InitialValueConstantField(), itemstat->RandomizerRangeMultiplierField(), itemstat->StateModifierScaleField(), percent);
+
+				//	if (newStat >= 65536.f)
+				//		newStat = 65535;
+
+				//	//item->SetItemStatValues(EPrimalItemStat::WeaponDamagePercent, newStat);
+				//	item->ItemStatValuesField()()[EPrimalItemStat::WeaponDamagePercent] = newStat;
+				//	updated = true;
+				//}
+
+				//AsaApi::IApiUtils::FreeStruct(itemstat);
+			}
+
+			if (updated)
+				item->UpdatedItem(false);
+		}
+	}
+}
+
+// Builds custom data for cryopod
+FCustomItemData ArkShop::GetDinoCustomItemData(APrimalDinoCharacter* dino, UPrimalItem* saddle, bool Modded)
+{
+	FCustomItemData customItemData;
+
+	if (!Modded)
+	{
+		FARKDinoData dinoData;
+		dino->GetDinoData(&dinoData);
+
+		//
+		// Custom Data Name
+		//
+		customItemData.CustomDataName = FName("Dino", EFindName::FNAME_Add);
+
+		TArray<FName> names;
+		dino->GetColorSetNamesAsArray(&names);
+		customItemData.CustomDataNames = names;
+		// one time use settings
+		customItemData.CustomDataNames.Add(FName("MissionTemporary", EFindName::FNAME_Add));
+		customItemData.CustomDataNames.Add(FName("None", EFindName::FNAME_Find));
+
+		//
+		// Custom Data Floats
+		//
+		customItemData.CustomDataFloats = GetCharacterStatsAsFloats(dino);
+
+		//
+		// Custom Data Doubles
+		//
+		auto t1 = AsaApi::GetApiUtils().GetShooterGameMode()->GetWorld()->TimeSecondsField();
+		customItemData.CustomDataDoubles.Doubles.Add(t1);
+		customItemData.CustomDataDoubles.Doubles.Add(dino->BabyNextCuddleTimeField() - t1);
+		customItemData.CustomDataDoubles.Doubles.Add(dino->NextAllowedMatingTimeField());
+
+		const float d1 = static_cast<float>(dino->RandomMutationsMaleField());
+		const double d2 = static_cast<double>(d1);
+		customItemData.CustomDataDoubles.Doubles.Add(d2);
+
+		const float d3 = static_cast<float>(dino->RandomMutationsFemaleField());
+		const double d4 = static_cast<double>(d3);
+		customItemData.CustomDataDoubles.Doubles.Add(d4);
+
+		auto stat = dino->MyCharacterStatusComponentField();
+		if (stat)
+		{
+			const double d5 = static_cast<double>(stat->DinoImprintingQualityField());
+			customItemData.CustomDataDoubles.Doubles.Add(d5);
+		}
+		customItemData.CustomDataDoubles.Doubles.Add(std::time(nullptr));
+
+		//
+		// Custom Data Strings
+		//
+		customItemData.CustomDataStrings = GetDinoDataStrings(dino, dinoData.DinoNameInMap, dinoData.DinoName);
+
+		//
+		// Custom Data Classes
+		//
+		customItemData.CustomDataClasses.Add(dinoData.DinoClass);
+
+		//
+		// Custom Data Bytes
+		//
+		FCustomItemByteArray dinoBytes, saddlebytes;
+		dinoBytes.Bytes = dinoData.DinoData;
+		customItemData.CustomDataBytes.ByteArrays.Add(dinoBytes);
+
+		if (saddle)
+		{
+			saddle->GetItemBytes(&saddlebytes.Bytes);
+			customItemData.CustomDataBytes.ByteArrays.Add(saddlebytes);
+		}
+		customItemData.CustomDataBytes.ByteArrays.Add(FCustomItemByteArray());
+
+		FCustomItemByteArray arr = FCustomItemByteArray();
+		arr.Bytes.Add(dino->TamedAggressionLevelField());
+		customItemData.CustomDataBytes.ByteArrays.Add(arr);
+	}
+	else
+	{
+		FARKDinoData dinoData;
+		dino->GetDinoData(&dinoData);
+
+		customItemData.CustomDataName = FName("Dino", EFindName::FNAME_Add);
+
+		customItemData.CustomDataFloats.Add(1800.0f);
+		customItemData.CustomDataFloats.Add(1.0f);
+
+		customItemData.CustomDataStrings.Add(dinoData.DinoNameInMap); //0
+		customItemData.CustomDataStrings.Add(dinoData.DinoName); //1
+		customItemData.CustomDataStrings.Add(L"0"); //2
+		customItemData.CustomDataStrings.Add(FString(std::to_string(dino->bNeutered()()))); //3
+		customItemData.CustomDataStrings.Add(FString(std::to_string(dino->bIsFemale()()))); //4
+		customItemData.CustomDataStrings.Add(L""); //5
+		customItemData.CustomDataStrings.Add(L""); //6
+		customItemData.CustomDataStrings.Add(L"SDOTU"); //7
+		customItemData.CustomDataStrings.Add(FString(std::to_string(dino->bUsesGender()()))); //8
+		customItemData.CustomDataStrings.Add(L"0"); //9
+		customItemData.CustomDataStrings.Add(AsaApi::GetApiUtils().GetBlueprint(dino)); //10
+		customItemData.CustomDataStrings.Add(L""); //11
+		customItemData.CustomDataStrings.Add(FString(std::to_string(dino->bPreventMating()()))); //12
+		customItemData.CustomDataStrings.Add(FString(std::to_string(dino->bUseBabyGestation()()))); //13
+		customItemData.CustomDataStrings.Add(FString(std::to_string(dino->bDebugBaby()()))); //14
+		customItemData.CustomDataStrings.Add("0"); //15
+		customItemData.CustomDataStrings.Add(dino->DescriptiveNameField()); //16
+
+		customItemData.CustomDataDoubles.Doubles.Add(AsaApi::GetApiUtils().GetWorld()->TimeSecondsField() * -1);
+		customItemData.CustomDataDoubles.Doubles.Add(0);
+
+		FCustomItemByteArray dinoBytes;
+		dinoBytes.Bytes = dinoData.DinoData;
+		customItemData.CustomDataBytes.ByteArrays.Add(dinoBytes); //0
+
+		if (saddle)
+		{
+			FCustomItemByteArray saddlebytes, emptyBytes;
+			saddle->GetItemBytes(&saddlebytes.Bytes);
+			customItemData.CustomDataBytes.ByteArrays.Add(emptyBytes); //1
+			customItemData.CustomDataBytes.ByteArrays.Add(saddlebytes); //2
+		}
+	}
+
+	return customItemData;
+}
 
 //void HandleStryder(APrimalDinoCharacter* dino, int stryderhead, int stryderchest)
 //{
@@ -487,19 +456,21 @@ bool ArkShop::GiveDino(AShooterPlayerController* player_controller, int level, b
 				dino->bIsFemale() = true;
 		}
 
-		PreventCryo = true; // force skip cryo for now
 		if (!PreventCryo && ArkShop::config["General"].value("GiveDinosInCryopods", false))
 		{
-			/*bool Modded = config["General"].value("UseSoulTraps", false);
+			//bool Modded = config["General"].value("UseSoulTraps", false);
+			bool Modded = false; // there's no DSv2 mod anymore...
 
-			FString cryo = FString(ArkShop::config["General"].value("CryoItemPath", "Blueprint'/Game/Extinction/CoreBlueprints/Weapons/PrimalItem_WeaponEmptyCryopod.PrimalItem_WeaponEmptyCryopod'"));
-			if (Modded)
-				cryo = FString("Blueprint'/Game/Mods/DinoStorage2/SoulTrap_DS.SoulTrap_DS'");
-			if (cryo.IsEmpty())
-				cryo = FString("Blueprint'/Game/Extinction/CoreBlueprints/Weapons/PrimalItem_WeaponEmptyCryopod.PrimalItem_WeaponEmptyCryopod'");
+			// Use Pelayori's Cryo Storage mod as there's no other vanilla default option at the moment
+			FString cryo = FString(ArkShop::config["General"].value("CryoItemPath", "Blueprint'/Cryopods/Cryopods/PrimalItem_WeaponEmptyCryopod_Mod.PrimalItem_WeaponEmptyCryopod_Mod'"));
+			//if (Modded)
+			//	cryo = FString("Blueprint'/Game/Mods/DinoStorage2/SoulTrap_DS.SoulTrap_DS'");
+			//if (cryo.IsEmpty())
+			//cryo = FString("Blueprint'/Game/Extinction/CoreBlueprints/Weapons/PrimalItem_WeaponEmptyCryopod.PrimalItem_WeaponEmptyCryopod'");
 
-			UClass* Class = UVictoryCore::BPLoadClass(&cryo);
-			UPrimalItem* item = UPrimalItem::AddNewItem(Class, nullptr, false, false, 0, false, 0, false, 0, false, nullptr, 0, false, false);
+			TSubclassOf<UObject> Class;
+			UVictoryCore::StringReferenceToClass(&Class, &cryo);
+			UPrimalItem* item = UPrimalItem::AddNewItem(Class.uClass, nullptr, false, false, 0, false, 0, false, 0, false, nullptr, 0, false, false, true);
 			if (item)
 			{
 				if (ArkShop::config["General"].value("CryoLimitedTime", false) && !Modded)
@@ -512,8 +483,8 @@ bool ArkShop::GiveDino(AShooterPlayerController* player_controller, int level, b
 				if (saddleblueprint.size() > 0)
 				{
 					FString fblueprint(saddleblueprint.c_str());
-					UClass* Class = UVictoryCore::BPLoadClass(&fblueprint);
-					saddle = UPrimalItem::AddNewItem(Class, nullptr, false, false, 0, false, 0, false, 0, false, nullptr, 0, false, false);
+					UVictoryCore::StringReferenceToClass(&Class, &fblueprint);
+					saddle = UPrimalItem::AddNewItem(Class.uClass, nullptr, false, false, 0, false, 0, false, 0, false, nullptr, 0, false, false, true);
 				}
 
 				FCustomItemData customItemData = GetDinoCustomItemData(dino, saddle, Modded);
@@ -529,7 +500,7 @@ bool ArkShop::GiveDino(AShooterPlayerController* player_controller, int level, b
 				}
 			}
 
-			dino->Destroy(true, false);*/
+			dino->Destroy(true, false);
 		}
 		else
 			success = true;

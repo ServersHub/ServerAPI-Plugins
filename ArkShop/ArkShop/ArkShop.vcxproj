@@ -66,7 +66,7 @@
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;SHOP_EXPORTS;_SILENCE_ALL_CXX20_DEPRECATION_WARNINGS;_CRT_SECURE_NO_WARNINGS;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Arkshop\Public;$(SolutionDir)Includes..\Permissions\Permissions\Public;$(SolutionDir)Includes;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\API;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\API\ARK;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\API\UE;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\Logger;$(SolutionDir)..\..\ServerAPI\AsaApi\vcpkg_installed\x64-windows\x64-windows\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Arkshop\Public;$(SolutionDir)..\Permissions\Permissions\Public;$(SolutionDir)Includes;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\API;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\API\ARK;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\API\UE;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\Logger;$(SolutionDir)..\..\ServerAPI\AsaApi\vcpkg_installed\x64-windows\x64-windows\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -92,7 +92,7 @@
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;SHOP_EXPORTS;_SILENCE_ALL_CXX20_DEPRECATION_WARNINGS;_CRT_SECURE_NO_WARNINGS;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Arkshop\Public;$(SolutionDir)Includes..\Permissions\Permissions\Public;$(SolutionDir)Includes;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\API;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\API\ARK;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\API\UE;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\Logger;$(SolutionDir)..\..\ServerAPI\AsaApi\vcpkg_installed\x64-windows\x64-windows\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Arkshop\Public;$(SolutionDir)..\Permissions\Permissions\Public;$(SolutionDir)Includes;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\API;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\API\ARK;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\API\UE;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\Logger;$(SolutionDir)..\..\ServerAPI\AsaApi\vcpkg_installed\x64-windows\x64-windows\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -117,6 +117,7 @@ copy "$(SolutionDir)$(PlatformName)\$(ConfigurationName)\$(ProjectName).pdb" "F:
     <ClInclude Include="Private\Database\IDatabase.h" />
     <ClInclude Include="Private\Database\MysqlDB.h" />
     <ClInclude Include="Private\Database\SqlLiteDB.h" />
+    <ClInclude Include="Private\Helpers.h" />
     <ClInclude Include="Private\json.hpp" />
     <ClInclude Include="Private\ShopLog.h" />
     <ClInclude Include="Private\Database\sqlite3.h" />
