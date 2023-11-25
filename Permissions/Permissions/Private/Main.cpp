@@ -956,7 +956,7 @@ namespace Permissions
 				config.value("MysqlTribesTable", "TribePermissions"));
 		}
 		else
-			database = std::make_unique<SqlLite>(config.value("SQLiteDbPathOverride", ""));
+			database = std::make_unique<SqlLite>(config.value("DbPathOverride", ""));
 
 		database->Init();
 		lastDatabaseSyncTime = time(0);
