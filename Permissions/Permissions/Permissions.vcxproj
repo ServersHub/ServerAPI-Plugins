@@ -39,6 +39,9 @@
     <None Include="..\Configs\config.json" />
     <None Include="..\Configs\PluginInfo.json" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\Configs\notes.txt" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{356B181C-6960-46EC-86B3-2020A7E50FAF}</ProjectGuid>

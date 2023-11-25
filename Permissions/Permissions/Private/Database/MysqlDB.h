@@ -876,13 +876,7 @@ public:
 
 	void upgradeDatabase(std::string db_name)
 	{
-		if (!IsFieldExists(table_players_, "TimedPermissionGroups"))
-		{
-			if (!db_.query(fmt::format("ALTER TABLE {} ADD COLUMN TimedPermissionGroups VARCHAR(256) DEFAULT '' AFTER PermissionGroups;", table_players_)))
-			{
-				Log::GetLog()->critical("({} {}) Failed to update Permissions {} table!", __FILE__, __FUNCTION__, table_players_);
-			}
-		}
+
 	}
 
 private:
