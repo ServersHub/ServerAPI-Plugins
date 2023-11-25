@@ -1,5 +1,5 @@
 {
-  "Database": "sqlite",
+  "UseMysql": false,
   "MysqlHost": "localhost",
   "MysqlUser": "root",
   "MysqlPass": "pass",

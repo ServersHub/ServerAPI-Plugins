@@ -92,4 +92,9 @@
       <Filter>Configs</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\Configs\notes.txt">
+      <Filter>Configs</Filter>
+    </Text>
+  </ItemGroup>
 </Project>

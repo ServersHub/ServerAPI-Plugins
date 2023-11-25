@@ -934,9 +934,8 @@ namespace Permissions
 			ReadConfig();
 			SyncFrequency = config.value("ClusterSyncTime", 60);
 			if (SyncFrequency < 20)
-			{
 				SyncFrequency = 20;
-			}
+
 		}
 		catch (const std::exception& error)
 		{
@@ -944,7 +943,7 @@ namespace Permissions
 			throw;
 		}
 
-		if (config.value("Database", "sqlite") == "mysql")
+		if (config.value("UseMysql", false))
 		{
 			database = std::make_unique<MySql>(
 				config.value("MysqlHost", ""),
@@ -957,9 +956,7 @@ namespace Permissions
 				config.value("MysqlTribesTable", "TribePermissions"));
 		}
 		else
-		{
 			database = std::make_unique<SqlLite>(config.value("DbPathOverride", ""));
-		}
 
 		database->Init();
 		lastDatabaseSyncTime = time(0);
