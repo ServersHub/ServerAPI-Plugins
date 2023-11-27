@@ -97,21 +97,18 @@ void ArkShop::ApplyItemStats(TArray<UPrimalItem*> items, int armor, int durabili
 		{
 			bool updated = false;
 
-			static int statInfoStructSize = GetStructSize<FItemStatInfo>();
+			auto ItemStatInfos = item->ItemStatInfosField();
 
 			if (armor > 0)
 			{
+				FItemStatInfo itemstat = ItemStatInfos()[EPrimalItemStat::Armor];
 
-				//FItemStatInfo* itemstat = AsaApi::IApiUtils::AllocateStruct<FItemStatInfo>();
-				//item->GetItemStatInfo(itemstat, EPrimalItemStat::Armor);
-				FItemStatInfo* itemstat = &item->ItemStatInfosField()()[EPrimalItemStat::Armor];
-	
-				if (itemstat->bUsed()())
+				if (itemstat.bUsed)
 				{
 					float newStat = 0.f;
-					bool percent = itemstat->bDisplayAsPercent()();
+					bool percent = itemstat.bDisplayAsPercent;
 
-					newStat = getStatValue(armor, itemstat->InitialValueConstantField(), itemstat->RandomizerRangeMultiplierField(), itemstat->StateModifierScaleField(), percent);
+					newStat = getStatValue(armor, itemstat.InitialValueConstant, itemstat.RandomizerRangeMultiplier, itemstat.StateModifierScale, percent);
 
 					if (newStat >= 65536.f)
 						newStat = 65535;
@@ -119,22 +116,18 @@ void ArkShop::ApplyItemStats(TArray<UPrimalItem*> items, int armor, int durabili
 					item->ItemStatValuesField()()[EPrimalItemStat::Armor] = newStat;
 					updated = true;
 				}
-
-				AsaApi::IApiUtils::FreeStruct(itemstat);
 			}
 
 			if (durability > 0)
 			{
-				//FItemStatInfo* itemstat = AsaApi::IApiUtils::AllocateStruct<FItemStatInfo>();
-				//item->GetItemStatInfo(itemstat, EPrimalItemStat::MaxDurability);
-				FItemStatInfo* itemstat = &item->ItemStatInfosField()()[EPrimalItemStat::MaxDurability];
+				FItemStatInfo itemstat = ItemStatInfos()[EPrimalItemStat::MaxDurability];
 
-				/*if (itemstat->bUsed()())
+				if (itemstat.bUsed)
 				{
 					float newStat = 0.f;
-					bool percent = itemstat->bDisplayAsPercent()();
+					bool percent = itemstat.bDisplayAsPercent;
 
-					newStat = getStatValue(durability, itemstat->InitialValueConstantField(), itemstat->RandomizerRangeMultiplierField(), itemstat->StateModifierScaleField(), percent) + 1;
+					newStat = getStatValue(durability, itemstat.InitialValueConstant, itemstat.RandomizerRangeMultiplier, itemstat.StateModifierScale, percent) + 1;
 
 					if (newStat >= 65536.f)
 						newStat = 65535;
@@ -142,29 +135,26 @@ void ArkShop::ApplyItemStats(TArray<UPrimalItem*> items, int armor, int durabili
 					item->ItemStatValuesField()()[EPrimalItemStat::MaxDurability] = newStat;
 					item->ItemDurabilityField() = item->GetItemStatModifier(EPrimalItemStat::MaxDurability);
 					updated = true;
-				}*/
+				}
 			}
 
 			if (damage > 0)
 			{
-				FItemStatInfo* itemstat = &item->ItemStatInfosField()()[EPrimalItemStat::WeaponDamagePercent];
+				FItemStatInfo itemstat = ItemStatInfos()[EPrimalItemStat::WeaponDamagePercent];
 
-				//if (itemstat->bUsed()())
-				//{
-				//	float newStat = 0.f;
-				//	bool percent = itemstat->bDisplayAsPercent()();
+				if (itemstat.bUsed)
+				{
+					float newStat = 0.f;
+					bool percent = itemstat.bDisplayAsPercent;
 
-				//	newStat = getStatValue(damage, itemstat->InitialValueConstantField(), itemstat->RandomizerRangeMultiplierField(), itemstat->StateModifierScaleField(), percent);
+					newStat = getStatValue(damage, itemstat.InitialValueConstant, itemstat.RandomizerRangeMultiplier, itemstat.StateModifierScale, percent);
 
-				//	if (newStat >= 65536.f)
-				//		newStat = 65535;
+					if (newStat >= 65536.f)
+						newStat = 65535;
 
-				//	//item->SetItemStatValues(EPrimalItemStat::WeaponDamagePercent, newStat);
-				//	item->ItemStatValuesField()()[EPrimalItemStat::WeaponDamagePercent] = newStat;
-				//	updated = true;
-				//}
-
-				//AsaApi::IApiUtils::FreeStruct(itemstat);
+					item->ItemStatValuesField()()[EPrimalItemStat::WeaponDamagePercent] = newStat;
+					updated = true;
+				}
 			}
 
 			if (updated)
@@ -227,7 +217,7 @@ FCustomItemData ArkShop::GetDinoCustomItemData(APrimalDinoCharacter* dino, UPrim
 		//
 		// Custom Data Strings
 		//
-		customItemData.CustomDataStrings = GetDinoDataStrings(dino, dinoData.DinoNameInMap, dinoData.DinoName);
+		customItemData.CustomDataStrings = GetDinoDataStrings(dino, dinoData.DinoNameInMap, dinoData.DinoName, saddle);
 
 		//
 		// Custom Data Classes

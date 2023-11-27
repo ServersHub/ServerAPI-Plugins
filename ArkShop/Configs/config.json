@@ -162,12 +162,14 @@
           "Quality": 0,
           "ForceBlueprint": false,
           "Amount": 1,
+          "Damage": 300,
           "Blueprint": "Blueprint'/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponMetalHatchet.PrimalItem_WeaponMetalHatchet'"
         },
         {
           "Quality": 1,
           "ForceBlueprint": false,
           "Amount": 1,
+          "Damage": 300,
           "Blueprint": "Blueprint'/Game/PrimalEarth/CoreBlueprints/Weapons/PrimalItem_WeaponMetalPick.PrimalItem_WeaponMetalPick'"
         },
         {

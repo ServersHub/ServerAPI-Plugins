@@ -29,10 +29,10 @@ namespace ArkShop
 		int NumEntries = EPrimalCharacterStatusValue::MAX - 1;
 		for (int i = 0; i < NumEntries; i++)
 			floats.Add(comp->CurrentStatusValuesField()()[(EPrimalCharacterStatusValue::Type)i]);
-		
+
 		for (int i = 0; i < NumEntries; i++)
 			floats.Add(comp->MaxStatusValuesField()()[(EPrimalCharacterStatusValue::Type)i]);
-		
+
 		for (int i = 0; i < NumEntries; i++)
 			floats.Add(comp->GetStatusValueRecoveryRate((EPrimalCharacterStatusValue::Type)i));
 
@@ -45,12 +45,18 @@ namespace ArkShop
 		return floats;
 	}
 
-	FORCEINLINE TArray<FString> GetSaddleData(APrimalDinoCharacter* dino)
+	FORCEINLINE TArray<FString> GetSaddleData(UPrimalItem* saddle)
 	{
-		TArray<FString> data{ "", "", "" };
-		TArray<FString> colors{ "0", "0", "0" };
+		TArray<FString> data;
+		TArray<FString> colors;
 
-		UPrimalItem* saddle = dino->MyInventoryComponentField()->GetEquippedItemOfType(EPrimalEquipmentType::DinoSaddle);
+		data.Add("");
+		data.Add("");
+		data.Add("");
+		colors.Add("0");
+		colors.Add("0");
+		colors.Add("0");
+
 		if (!saddle)
 		{
 			data.Append(colors);
@@ -66,12 +72,11 @@ namespace ArkShop
 
 		auto entry = pgd->ItemQualityDefinitionsField()[index];
 		c = entry.QualityColorField();
-		FString str = entry.QualityNameField();
 
-		//saddle->GetItemQualityColor(&c);
 		colors[0] = FString(std::to_string(c.R));
 		colors[1] = FString(std::to_string(c.G));
 		colors[2] = FString(std::to_string(c.B));
+		FString str = entry.QualityNameField();
 
 		data[1] = FString::Format("{} {}", API::Tools::Utf8Encode(*str), API::Tools::Utf8Encode(*saddle->DescriptiveNameBaseField()));
 		data[2] = AsaApi::IApiUtils::GetBlueprint(saddle);
@@ -80,10 +85,12 @@ namespace ArkShop
 		return data;
 	}
 
-	FORCEINLINE TArray<FString> GetDinoDataStrings(APrimalDinoCharacter* dino, const FString& dinoNameInMAP, const FString& dinoName)
+	FORCEINLINE TArray<FString> GetDinoDataStrings(APrimalDinoCharacter* dino, const FString& dinoNameInMAP, const FString& dinoName, UPrimalItem* saddle)
 	{
-		TArray<FString> strings{ dinoNameInMAP, dinoName };
-		
+		TArray<FString> strings;
+		strings.Add(dinoNameInMAP);
+		strings.Add(dinoName);
+
 		FString tmp;
 		dino->GetColorSetInidcesAsString(&tmp);
 		strings.Add(tmp);
@@ -99,7 +106,16 @@ namespace ArkShop
 		strings.Add(tmp);
 		strings.Add(""); // empty
 		strings.Add("0"); // should get bitmasks for buffs but doesn't seem to get used
-		strings.Append(GetSaddleData(dino));
+
+		//strings.Append(GetSaddleData(saddle)); 
+		//bypassing saddle data for now
+		strings.Add("");
+		strings.Add("");
+		strings.Add("");
+		strings.Add("0");
+		strings.Add("0");
+		strings.Add("0");
+
 		strings.Add(""); // extra data like harvest levels - not needed
 		tmp = "";
 		dino->GetCurrentDinoName(&tmp, nullptr);
