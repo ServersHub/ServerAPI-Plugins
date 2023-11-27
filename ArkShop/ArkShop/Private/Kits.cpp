@@ -226,7 +226,7 @@ namespace ArkShop::Kits
 
 			TArray<UPrimalItem*> out_items;
 			player_controller->GiveItem(&out_items, &fblueprint, amount, quality, force_blueprint, false, 0);
-			//ApplyItemStats(out_items, armor, durability, damage);
+			ApplyItemStats(out_items, armor, durability, damage);
 		}
 
 		// Give dinos
@@ -681,7 +681,7 @@ namespace ArkShop::Kits
 		if (player != nullptr)
 		{
 			const FString& eos_id = AsaApi::IApiUtils::GetEOSIDFromController(player);
-			if (!eos_id.IsEmpty())
+			if (!eos_id.IsEmpty() && !ArkShop::DBHelper::IsPlayerExists(eos_id))
 				database->TryAddNewPlayer(eos_id);
 
 			const std::string default_kit = config["General"].value("DefaultKit", "");
