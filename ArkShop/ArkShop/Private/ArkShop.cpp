@@ -474,7 +474,7 @@ bool ArkShop::GiveDino(AShooterPlayerController* player_controller, int level, b
 				{
 					FString fblueprint(saddleblueprint.c_str());
 					UVictoryCore::StringReferenceToClass(&Class, &fblueprint);
-					saddle = UPrimalItem::AddNewItem(Class.uClass, nullptr, false, false, 0, false, 0, false, 0, false, nullptr, 0, false, false, true);
+					saddle = UPrimalItem::AddNewItem(Class.uClass, dino->MyInventoryComponentField(), true, false, 0, false, 0, false, 0, false, nullptr, 0, false, false, true);
 				}
 
 				FCustomItemData customItemData = GetDinoCustomItemData(dino, saddle, Modded);
