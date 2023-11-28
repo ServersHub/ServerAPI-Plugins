@@ -508,55 +508,55 @@ bool ArkShop::ShouldPreventStoreUse(AShooterPlayerController* player_controller)
 		AShooterCharacter* character = player_controller->GetPlayerCharacter();
 
 		//Noglin Buff Cache Controlling Player
-		if (config["General"].value("PreventUseNoglin", true) && !NoglinBuffClass)
-		{
-			try
-			{
-				FString buffClassString = "Blueprint'/Game/Genesis2/Dinos/BrainSlug/Buff_BrainSlugPostProccess.Buff_BrainSlugPostProccess'";
-				TSubclassOf<UObject> archetype;
-				UVictoryCore::StringReferenceToClass(&archetype, &buffClassString);
-				NoglinBuffClass = archetype.uClass;
-			}
-			catch (const std::exception& error)
-			{
-				Log::GetLog()->error(error.what());
-			}
-		}
+		//if (config["General"].value("PreventUseNoglin", true) && !NoglinBuffClass)
+		//{
+		//	try
+		//	{
+		//		FString buffClassString = "Blueprint'/Game/Genesis2/Dinos/BrainSlug/Buff_BrainSlugPostProccess.Buff_BrainSlugPostProccess'";
+		//		TSubclassOf<UObject> archetype;
+		//		UVictoryCore::StringReferenceToClass(&archetype, &buffClassString);
+		//		NoglinBuffClass = archetype.uClass;
+		//	}
+		//	catch (const std::exception& error)
+		//	{
+		//		Log::GetLog()->error(error.what());
+		//	}
+		//}
 
-		//Noglin Buff Cache Controlled Player
-		if (config["General"].value("PreventUseNoglin", true) && !NoglinBuffClass2)
-		{
-			try
-			{
-				FString buffClassString = "Blueprint'/Game/Genesis2/Dinos/BrainSlug/Buff_BrainSlug_HumanControl.Buff_BrainSlug_HumanControl'";
-				TSubclassOf<UObject> archetype;
-				UVictoryCore::StringReferenceToClass(&archetype, &buffClassString);
-				NoglinBuffClass2 = archetype.uClass;
-			}
-			catch (const std::exception& error)
-			{
-				Log::GetLog()->error(error.what());
-			}
-		}
+		////Noglin Buff Cache Controlled Player
+		//if (config["General"].value("PreventUseNoglin", true) && !NoglinBuffClass2)
+		//{
+		//	try
+		//	{
+		//		FString buffClassString = "Blueprint'/Game/Genesis2/Dinos/BrainSlug/Buff_BrainSlug_HumanControl.Buff_BrainSlug_HumanControl'";
+		//		TSubclassOf<UObject> archetype;
+		//		UVictoryCore::StringReferenceToClass(&archetype, &buffClassString);
+		//		NoglinBuffClass2 = archetype.uClass;
+		//	}
+		//	catch (const std::exception& error)
+		//	{
+		//		Log::GetLog()->error(error.what());
+		//	}
+		//}
 
-		//Noglin Buff Cache Controlled Dino
-		if (config["General"].value("PreventUseNoglin", true) && !NoglinBuffClass2)
-		{
-			try
-			{
-				FString buffClassString = "Blueprint'/Game/Genesis2/Dinos/BrainSlug/Buff_BrainSlugControl.Buff_BrainSlugControl'";
-				TSubclassOf<UObject> archetype;
-				UVictoryCore::StringReferenceToClass(&archetype, &buffClassString);
-				NoglinBuffClass3 = archetype.uClass;
-			}
-			catch (const std::exception& error)
-			{
-				Log::GetLog()->error(error.what());
-			}
-		}
+		////Noglin Buff Cache Controlled Dino
+		//if (config["General"].value("PreventUseNoglin", true) && !NoglinBuffClass3)
+		//{
+		//	try
+		//	{
+		//		FString buffClassString = "Blueprint'/Game/Genesis2/Dinos/BrainSlug/Buff_BrainSlugControl.Buff_BrainSlugControl'";
+		//		TSubclassOf<UObject> archetype;
+		//		UVictoryCore::StringReferenceToClass(&archetype, &buffClassString);
+		//		NoglinBuffClass3 = archetype.uClass;
+		//	}
+		//	catch (const std::exception& error)
+		//	{
+		//		Log::GetLog()->error(error.what());
+		//	}
+		//}
 
-		if (!preventBuying && config["General"].value("PreventUseNoglin", true) && (character->HasBuff(NoglinBuffClass, true) || character->HasBuff(NoglinBuffClass2, true) || character->HasBuff(NoglinBuffClass3, true)))
-			preventBuying = true;
+		/*if (!preventBuying && config["General"].value("PreventUseNoglin", true) && (character->HasBuff(NoglinBuffClass, true) || character->HasBuff(NoglinBuffClass2, true) || character->HasBuff(NoglinBuffClass3, true)))
+			preventBuying = true;*/
 
 		if (!preventBuying && config["General"].value("PreventUseUnconscious", true) && !character->IsConscious())
 			preventBuying = true;
