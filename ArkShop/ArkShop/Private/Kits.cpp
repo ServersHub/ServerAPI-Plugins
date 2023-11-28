@@ -267,7 +267,7 @@ namespace ArkShop::Kits
 				player_controller->bIsAdmin() = true;
 
 			FString result;
-			((APlayerController*)player_controller)->ConsoleCommand(&result, &fcommand, false);
+			player_controller->ConsoleCommand(&result, &fcommand, false);
 
 			if (!was_admin && exec_as_admin)
 				player_controller->bIsAdmin() = false;
