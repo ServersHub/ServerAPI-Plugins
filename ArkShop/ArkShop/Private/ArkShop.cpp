@@ -446,21 +446,20 @@ bool ArkShop::GiveDino(AShooterPlayerController* player_controller, int level, b
 				dino->bIsFemale() = true;
 		}
 
-		if (!PreventCryo && ArkShop::config["General"].value("GiveDinosInCryopods", false))
-		{
-			//bool Modded = config["General"].value("UseSoulTraps", false);
-			bool Modded = false; // there's no DSv2 mod anymore...
+		//bool Modded = config["General"].value("UseSoulTraps", false);
+		bool Modded = false; // there's no DSv2 mod anymore...
+		// Use Pelayori's Cryo Storage mod as there's no other vanilla default option at the moment
+		FString cryo = FString(ArkShop::config["General"].value("CryoItemPath", "Blueprint'/Cryopods/Cryopods/PrimalItem_WeaponEmptyCryopod_Mod.PrimalItem_WeaponEmptyCryopod_Mod'"));
+		UClass* cryoClass = UVictoryCore::BPLoadClass(cryo);
 
-			// Use Pelayori's Cryo Storage mod as there's no other vanilla default option at the moment
-			FString cryo = FString(ArkShop::config["General"].value("CryoItemPath", "Blueprint'/Cryopods/Cryopods/PrimalItem_WeaponEmptyCryopod_Mod.PrimalItem_WeaponEmptyCryopod_Mod'"));
+		if (!PreventCryo && cryoClass != nullptr && ArkShop::config["General"].value("GiveDinosInCryopods", false))
+		{
 			//if (Modded)
 			//	cryo = FString("Blueprint'/Game/Mods/DinoStorage2/SoulTrap_DS.SoulTrap_DS'");
 			//if (cryo.IsEmpty())
 			//cryo = FString("Blueprint'/Game/Extinction/CoreBlueprints/Weapons/PrimalItem_WeaponEmptyCryopod.PrimalItem_WeaponEmptyCryopod'");
 
-			TSubclassOf<UObject> Class;
-			UVictoryCore::StringReferenceToClass(&Class, &cryo);
-			UPrimalItem* item = UPrimalItem::AddNewItem(Class.uClass, nullptr, false, false, 0, false, 0, false, 0, false, nullptr, 0, false, false, true);
+			UPrimalItem* item = UPrimalItem::AddNewItem(cryoClass, nullptr, false, false, 0, false, 0, false, 0, false, nullptr, 0, false, false, true);
 			if (item)
 			{
 				if (ArkShop::config["General"].value("CryoLimitedTime", false) && !Modded)
@@ -473,8 +472,8 @@ bool ArkShop::GiveDino(AShooterPlayerController* player_controller, int level, b
 				if (saddleblueprint.size() > 0)
 				{
 					FString fblueprint(saddleblueprint.c_str());
-					UVictoryCore::StringReferenceToClass(&Class, &fblueprint);
-					saddle = UPrimalItem::AddNewItem(Class.uClass, dino->MyInventoryComponentField(), true, false, 0, false, 0, false, 0, false, nullptr, 0, false, false, true);
+					UClass* saddleClass = UVictoryCore::BPLoadClass(fblueprint);
+					saddle = UPrimalItem::AddNewItem(saddleClass, dino->MyInventoryComponentField(), true, false, 0, false, 0, false, 0, false, nullptr, 0, false, false, true);
 				}
 
 				FCustomItemData customItemData = GetDinoCustomItemData(dino, saddle, Modded);
