@@ -446,6 +446,14 @@ bool ArkShop::GiveDino(AShooterPlayerController* player_controller, int level, b
 				dino->bIsFemale() = true;
 		}
 
+		UPrimalItem* saddle = nullptr;
+		if (saddleblueprint.size() > 0)
+		{
+			FString fblueprint(saddleblueprint.c_str());
+			UClass* saddleClass = UVictoryCore::BPLoadClass(fblueprint);
+			saddle = UPrimalItem::AddNewItem(saddleClass, dino->MyInventoryComponentField(), true, false, 0, false, 0, false, 0, false, nullptr, 0, false, false, true);
+		}
+
 		//bool Modded = config["General"].value("UseSoulTraps", false);
 		bool Modded = false; // there's no DSv2 mod anymore...
 		// Use Pelayori's Cryo Storage mod as there's no other vanilla default option at the moment
@@ -467,14 +475,6 @@ bool ArkShop::GiveDino(AShooterPlayerController* player_controller, int level, b
 
 				if (Modded)
 					item->ItemDurabilityField() = 0.001;
-
-				UPrimalItem* saddle = nullptr;
-				if (saddleblueprint.size() > 0)
-				{
-					FString fblueprint(saddleblueprint.c_str());
-					UClass* saddleClass = UVictoryCore::BPLoadClass(fblueprint);
-					saddle = UPrimalItem::AddNewItem(saddleClass, dino->MyInventoryComponentField(), true, false, 0, false, 0, false, 0, false, nullptr, 0, false, false, true);
-				}
 
 				FCustomItemData customItemData = GetDinoCustomItemData(dino, saddle, Modded);
 				item->SetCustomItemData(&customItemData);
