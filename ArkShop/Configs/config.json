@@ -32,7 +32,6 @@
     "DbPathOverride": "",
     "DefaultKit": "",
     "GiveDinosInCryopods": true,
-    "UseSoulTraps": false,
     "CryoLimitedTime": false,
     "UseOriginalTradeCommandWithUI": false,
     "PreventUseNoglin": true,
