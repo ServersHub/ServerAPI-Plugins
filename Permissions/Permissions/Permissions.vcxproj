@@ -94,7 +94,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;PERMISSIONS_EXPORTS;_WINDOWS;_USRDLL;ARK_EXPORTS;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;PERMISSIONS_ARK;_SILENCE_ALL_CXX20_DEPRECATION_WARNINGS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;PERMISSIONS_EXPORTS;_WINDOWS;_USRDLL;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;PERMISSIONS_ARK;_SILENCE_ALL_CXX20_DEPRECATION_WARNINGS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)Includes;$(SolutionDir)Includes\sqlite3;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\API;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\API\ARK;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\API\UE;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\Logger;$(SolutionDir)..\..\ServerAPI\AsaApi\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include</AdditionalIncludeDirectories>
@@ -120,7 +120,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;PERMISSIONS_EXPORTS;_WINDOWS;_USRDLL;ARK_EXPORTS;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;PERMISSIONS_ARK;_SILENCE_ALL_CXX20_DEPRECATION_WARNINGS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;PERMISSIONS_EXPORTS;_WINDOWS;_USRDLL;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;PERMISSIONS_ARK;_SILENCE_ALL_CXX20_DEPRECATION_WARNINGS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)Includes;$(SolutionDir)Includes\sqlite3;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\API;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\API\ARK;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\API\UE;$(SolutionDir)..\..\ServerAPI\AsaApi\Core\Public\Logger;$(SolutionDir)..\..\ServerAPI\AsaApi\vcpkg_installed\x64-windows-static-md\x64-windows-static-md\include</AdditionalIncludeDirectories>
