@@ -42,6 +42,6 @@ namespace Permissions
 	PERMISSIONS_API bool IsTribeHasPermission(int tribeId, const FString& permission);
 	PERMISSIONS_API TArray<FString> GetTribeGroups(int tribeId);
 
-	PERMISSIONS_API void AddPlayerPermissionCallback(FString CallbackName, bool onlyCheckOnline, bool cacheBySteamId, bool cacheByTribe, const std::function<TArray<FString>(FString*, int*)>& callback);
+	PERMISSIONS_API void AddPlayerPermissionCallback(FString CallbackName, bool onlyCheckOnline, bool cacheBySteamId, bool cacheByTribe, const std::function<TArray<FString>(const FString&, int*)>& callback);
 	PERMISSIONS_API void RemovePlayerPermissionCallback(FString CallbackName);
 }
