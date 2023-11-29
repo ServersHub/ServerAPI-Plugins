@@ -390,7 +390,7 @@
     "StoreListFormat": "{0}",
     "OnlyOnSpawnKit": "This kit can be used only on spawn",
     "HelpCmd": "/shophelp",
-    "ShopMessage": "Usage: /buy id amount",
+    "ShopMessage": "{0}\nCurrently on page {1} of {2}.\nUse {3} page to flip pages.\nUse {4} item_id amount to purchase.",
     "HelpMessage": "This is shop help message",
     "RefundError": "Points refunded due to an error",
     "ShopFindCmd": "/shopfind",

@@ -567,18 +567,18 @@ namespace ArkShop::Store
 			}
 		}
 
-		store_str = FString::Format(*GetText("StoreListFormat"), *store_str);
+		//store_str = FString::Format(*GetText("StoreListFormat"), *store_str);
 
-		AsaApi::GetApiUtils().SendNotification(player_controller, FColorList::Green, text_size, display_time, nullptr,
+		//AsaApi::GetApiUtils().SendNotification(player_controller, FColorList::Green, text_size, display_time, nullptr,
 			*store_str);
 
 		FString shopmessage = GetText("ShopMessage");
 		if (shopmessage != AsaApi::Tools::Utf8Decode("No message").c_str())
 		{
-			shopmessage = FString::Format(*shopmessage, page + 1,
+			shopmessage = FString::Format(*shopmessage,*store_str, page + 1,
 				items_list.size() % items_per_page == 0
 				? items_list.size() / items_per_page
-				: items_list.size() / items_per_page + 1);
+				: items_list.size() / items_per_page + 1, GetText("ShopCmd"), GetText("BuyCmd"));
 			AsaApi::GetApiUtils().SendNotification(player_controller, FColorList::Green, text_size, display_time,
 				nullptr,
 				*shopmessage);
