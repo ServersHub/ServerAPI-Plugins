@@ -569,8 +569,7 @@ namespace ArkShop::Store
 
 		//store_str = FString::Format(*GetText("StoreListFormat"), *store_str);
 
-		//AsaApi::GetApiUtils().SendNotification(player_controller, FColorList::Green, text_size, display_time, nullptr,
-			*store_str);
+		//AsaApi::GetApiUtils().SendNotification(player_controller, FColorList::Green, text_size, display_time, nullptr,*store_str);
 
 		FString shopmessage = GetText("ShopMessage");
 		if (shopmessage != AsaApi::Tools::Utf8Decode("No message").c_str())
