@@ -65,7 +65,7 @@ namespace ArkShop::Store
 				UPrimalInventoryComponent* playerInventory = player_controller->GetPlayerInventoryComponent();
 				if (playerInventory)
 				{
-					if (stacksInOne)
+					if (stacksInOne || force_blueprint)
 					{
 						int loops = amount * default_amount;
 						TArray<UPrimalItem*> out_items{};
@@ -173,7 +173,9 @@ namespace ArkShop::Store
 				const bool exec_as_admin = item.value("ExecuteAsAdmin", false);
 
 				FString fcommand = fmt::format(
-					command, fmt::arg("eosid", eos_id.ToString()),
+					command, 
+					fmt::arg("eosid", eos_id.ToString()),
+					fmt::arg("eos_id", eos_id.ToString()),
 					fmt::arg("playerid", AsaApi::GetApiUtils().GetPlayerID(player_controller)),
 					fmt::arg("tribeid", AsaApi::GetApiUtils().GetTribeID(player_controller))
 				).c_str();

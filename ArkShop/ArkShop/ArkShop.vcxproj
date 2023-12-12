@@ -100,7 +100,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <DelayLoadDLLs>Permissions.dll</DelayLoadDLLs>
-      <AdditionalLibraryDirectories>$(SolutionDir)Libs;$(SolutionDir)..\..\ARK-API-Stable-Libs\1.00</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Libs;$(SolutionDir)..\..\ARK-API-Stable-Libs\1.02</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /I  /Y "$(TargetDir)$(ProjectName).lib" "$(SolutionDir)out_lib\"

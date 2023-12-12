@@ -164,127 +164,81 @@ void ArkShop::ApplyItemStats(TArray<UPrimalItem*> items, int armor, int durabili
 }
 
 // Builds custom data for cryopod
-FCustomItemData ArkShop::GetDinoCustomItemData(APrimalDinoCharacter* dino, UPrimalItem* saddle, bool Modded)
+FCustomItemData ArkShop::GetDinoCustomItemData(APrimalDinoCharacter* dino, UPrimalItem* saddle)
 {
 	FCustomItemData customItemData;
 
-	if (!Modded)
+	FARKDinoData dinoData;
+	dino->GetDinoData(&dinoData);
+
+	//
+	// Custom Data Name
+	//
+	customItemData.CustomDataName = FName("Dino", EFindName::FNAME_Add);
+
+	TArray<FName> names;
+	dino->GetColorSetNamesAsArray(&names);
+	customItemData.CustomDataNames = names;
+	// one time use settings
+	customItemData.CustomDataNames.Add(FName("MissionTemporary", EFindName::FNAME_Add));
+	customItemData.CustomDataNames.Add(FName("None", EFindName::FNAME_Find));
+
+	//
+	// Custom Data Floats
+	//
+	customItemData.CustomDataFloats = ArkShop::GetCharacterStatsAsFloats(dino);
+
+	//
+	// Custom Data Doubles
+	//
+	auto t1 = AsaApi::GetApiUtils().GetShooterGameMode()->GetWorld()->TimeSecondsField();
+	customItemData.CustomDataDoubles.Doubles.Add(t1);
+	customItemData.CustomDataDoubles.Doubles.Add(dino->BabyNextCuddleTimeField() - t1);
+	customItemData.CustomDataDoubles.Doubles.Add(dino->NextAllowedMatingTimeField());
+
+	const float d1 = static_cast<float>(dino->RandomMutationsMaleField());
+	const double d2 = static_cast<double>(d1);
+	customItemData.CustomDataDoubles.Doubles.Add(d2);
+
+	const float d3 = static_cast<float>(dino->RandomMutationsFemaleField());
+	const double d4 = static_cast<double>(d3);
+	customItemData.CustomDataDoubles.Doubles.Add(d4);
+
+	auto stat = dino->MyCharacterStatusComponentField();
+	if (stat)
 	{
-		FARKDinoData dinoData;
-		dino->GetDinoData(&dinoData);
-
-		//
-		// Custom Data Name
-		//
-		customItemData.CustomDataName = FName("Dino", EFindName::FNAME_Add);
-
-		TArray<FName> names;
-		dino->GetColorSetNamesAsArray(&names);
-		customItemData.CustomDataNames = names;
-		// one time use settings
-		customItemData.CustomDataNames.Add(FName("MissionTemporary", EFindName::FNAME_Add));
-		customItemData.CustomDataNames.Add(FName("None", EFindName::FNAME_Find));
-
-		//
-		// Custom Data Floats
-		//
-		customItemData.CustomDataFloats = GetCharacterStatsAsFloats(dino);
-
-		//
-		// Custom Data Doubles
-		//
-		auto t1 = AsaApi::GetApiUtils().GetShooterGameMode()->GetWorld()->TimeSecondsField();
-		customItemData.CustomDataDoubles.Doubles.Add(t1);
-		customItemData.CustomDataDoubles.Doubles.Add(dino->BabyNextCuddleTimeField() - t1);
-		customItemData.CustomDataDoubles.Doubles.Add(dino->NextAllowedMatingTimeField());
-
-		const float d1 = static_cast<float>(dino->RandomMutationsMaleField());
-		const double d2 = static_cast<double>(d1);
-		customItemData.CustomDataDoubles.Doubles.Add(d2);
-
-		const float d3 = static_cast<float>(dino->RandomMutationsFemaleField());
-		const double d4 = static_cast<double>(d3);
-		customItemData.CustomDataDoubles.Doubles.Add(d4);
-
-		auto stat = dino->MyCharacterStatusComponentField();
-		if (stat)
-		{
-			const double d5 = static_cast<double>(stat->DinoImprintingQualityField());
-			customItemData.CustomDataDoubles.Doubles.Add(d5);
-		}
-		customItemData.CustomDataDoubles.Doubles.Add(std::time(nullptr));
-
-		//
-		// Custom Data Strings
-		//
-		customItemData.CustomDataStrings = GetDinoDataStrings(dino, dinoData.DinoNameInMap, dinoData.DinoName, saddle);
-
-		//
-		// Custom Data Classes
-		//
-		customItemData.CustomDataClasses.Add(dinoData.DinoClass);
-
-		//
-		// Custom Data Bytes
-		//
-		FCustomItemByteArray dinoBytes, saddlebytes;
-		dinoBytes.Bytes = dinoData.DinoData;
-		customItemData.CustomDataBytes.ByteArrays.Add(dinoBytes);
-
-		if (saddle)
-		{
-			saddle->GetItemBytes(&saddlebytes.Bytes);
-			customItemData.CustomDataBytes.ByteArrays.Add(saddlebytes);
-		}
-		customItemData.CustomDataBytes.ByteArrays.Add(FCustomItemByteArray());
-
-		FCustomItemByteArray arr = FCustomItemByteArray();
-		arr.Bytes.Add(dino->TamedAggressionLevelField());
-		customItemData.CustomDataBytes.ByteArrays.Add(arr);
+		const double d5 = static_cast<double>(stat->DinoImprintingQualityField());
+		customItemData.CustomDataDoubles.Doubles.Add(d5);
 	}
-	else
+	customItemData.CustomDataDoubles.Doubles.Add(std::time(nullptr));
+
+	//
+	// Custom Data Strings
+	//
+	customItemData.CustomDataStrings = ArkShop::GetDinoDataStrings(dino, dinoData.DinoNameInMap, dinoData.DinoName, saddle);
+
+	//
+	// Custom Data Classes
+	//
+	customItemData.CustomDataClasses.Add(dinoData.DinoClass);
+
+	//
+	// Custom Data Bytes
+	//
+	FCustomItemByteArray dinoBytes, saddlebytes;
+	dinoBytes.Bytes = dinoData.DinoData;
+	customItemData.CustomDataBytes.ByteArrays.Add(dinoBytes);
+
+	if (saddle)
 	{
-		FARKDinoData dinoData;
-		dino->GetDinoData(&dinoData);
-
-		customItemData.CustomDataName = FName("Dino", EFindName::FNAME_Add);
-
-		customItemData.CustomDataFloats.Add(1800.0f);
-		customItemData.CustomDataFloats.Add(1.0f);
-
-		customItemData.CustomDataStrings.Add(dinoData.DinoNameInMap); //0
-		customItemData.CustomDataStrings.Add(dinoData.DinoName); //1
-		customItemData.CustomDataStrings.Add(L"0"); //2
-		customItemData.CustomDataStrings.Add(FString(std::to_string(dino->bNeutered()()))); //3
-		customItemData.CustomDataStrings.Add(FString(std::to_string(dino->bIsFemale()()))); //4
-		customItemData.CustomDataStrings.Add(L""); //5
-		customItemData.CustomDataStrings.Add(L""); //6
-		customItemData.CustomDataStrings.Add(L"SDOTU"); //7
-		customItemData.CustomDataStrings.Add(FString(std::to_string(dino->bUsesGender()()))); //8
-		customItemData.CustomDataStrings.Add(L"0"); //9
-		customItemData.CustomDataStrings.Add(AsaApi::GetApiUtils().GetBlueprint(dino)); //10
-		customItemData.CustomDataStrings.Add(L""); //11
-		customItemData.CustomDataStrings.Add(FString(std::to_string(dino->bPreventMating()()))); //12
-		customItemData.CustomDataStrings.Add(FString(std::to_string(dino->bUseBabyGestation()()))); //13
-		customItemData.CustomDataStrings.Add(FString(std::to_string(dino->bDebugBaby()()))); //14
-		customItemData.CustomDataStrings.Add("0"); //15
-		customItemData.CustomDataStrings.Add(dino->DescriptiveNameField()); //16
-
-		customItemData.CustomDataDoubles.Doubles.Add(AsaApi::GetApiUtils().GetWorld()->TimeSecondsField() * -1);
-		customItemData.CustomDataDoubles.Doubles.Add(0);
-
-		FCustomItemByteArray dinoBytes;
-		dinoBytes.Bytes = dinoData.DinoData;
-		customItemData.CustomDataBytes.ByteArrays.Add(dinoBytes); //0
-
-		if (saddle)
-		{
-			FCustomItemByteArray saddlebytes, emptyBytes;
-			saddle->GetItemBytes(&saddlebytes.Bytes);
-			customItemData.CustomDataBytes.ByteArrays.Add(emptyBytes); //1
-			customItemData.CustomDataBytes.ByteArrays.Add(saddlebytes); //2
-		}
+		saddle->GetItemBytes(&saddlebytes.Bytes);
+		customItemData.CustomDataBytes.ByteArrays.Add(saddlebytes);
 	}
+	customItemData.CustomDataBytes.ByteArrays.Add(FCustomItemByteArray());
+
+	FCustomItemByteArray arr = FCustomItemByteArray();
+	arr.Bytes.Add(dino->TamedAggressionLevelField());
+	customItemData.CustomDataBytes.ByteArrays.Add(arr);
 
 	return customItemData;
 }
@@ -454,29 +408,19 @@ bool ArkShop::GiveDino(AShooterPlayerController* player_controller, int level, b
 			saddle = UPrimalItem::AddNewItem(saddleClass, dino->MyInventoryComponentField(), true, false, 0, false, 0, false, 0, false, nullptr, 0, false, false, true);
 		}
 
-		//bool Modded = config["General"].value("UseSoulTraps", false);
-		bool Modded = false; // there's no DSv2 mod anymore...
-		// Use Pelayori's Cryo Storage mod as there's no other vanilla default option at the moment
+		// Use Pelayori's Cryo Storage mod
 		FString cryo = FString(ArkShop::config["General"].value("CryoItemPath", "Blueprint'/Cryopods/Cryopods/PrimalItem_WeaponEmptyCryopod_Mod.PrimalItem_WeaponEmptyCryopod_Mod'"));
 		UClass* cryoClass = UVictoryCore::BPLoadClass(cryo);
 
 		if (!PreventCryo && cryoClass != nullptr && ArkShop::config["General"].value("GiveDinosInCryopods", false))
 		{
-			//if (Modded)
-			//	cryo = FString("Blueprint'/Game/Mods/DinoStorage2/SoulTrap_DS.SoulTrap_DS'");
-			//if (cryo.IsEmpty())
-			//cryo = FString("Blueprint'/Game/Extinction/CoreBlueprints/Weapons/PrimalItem_WeaponEmptyCryopod.PrimalItem_WeaponEmptyCryopod'");
-
 			UPrimalItem* item = UPrimalItem::AddNewItem(cryoClass, nullptr, false, false, 0, false, 0, false, 0, false, nullptr, 0, false, false, true);
 			if (item)
 			{
-				if (ArkShop::config["General"].value("CryoLimitedTime", false) && !Modded)
+				if (ArkShop::config["General"].value("CryoLimitedTime", false))
 					item->AddItemDurability((item->ItemDurabilityField() - 3600) * -1);
 
-				if (Modded)
-					item->ItemDurabilityField() = 0.001;
-
-				FCustomItemData customItemData = GetDinoCustomItemData(dino, saddle, Modded);
+				FCustomItemData customItemData = GetDinoCustomItemData(dino, saddle);
 				item->SetCustomItemData(&customItemData);
 				item->UpdatedItem(true);
 
@@ -507,55 +451,55 @@ bool ArkShop::ShouldPreventStoreUse(AShooterPlayerController* player_controller)
 		AShooterCharacter* character = player_controller->GetPlayerCharacter();
 
 		//Noglin Buff Cache Controlling Player
-		//if (config["General"].value("PreventUseNoglin", true) && !NoglinBuffClass)
-		//{
-		//	try
-		//	{
-		//		FString buffClassString = "Blueprint'/Game/Genesis2/Dinos/BrainSlug/Buff_BrainSlugPostProccess.Buff_BrainSlugPostProccess'";
-		//		TSubclassOf<UObject> archetype;
-		//		UVictoryCore::StringReferenceToClass(&archetype, &buffClassString);
-		//		NoglinBuffClass = archetype.uClass;
-		//	}
-		//	catch (const std::exception& error)
-		//	{
-		//		Log::GetLog()->error(error.what());
-		//	}
-		//}
+		if (config["General"].value("PreventUseNoglin", true) && !NoglinBuffClass.Get(false))
+		{
+			try
+			{
+				FString buffClassString = "Blueprint'/Game/Genesis2/Dinos/BrainSlug/Buff_BrainSlugPostProccess.Buff_BrainSlugPostProccess'";
+				TSubclassOf<UObject> archetype;
+				UVictoryCore::StringReferenceToClass(&archetype, &buffClassString);
+				NoglinBuffClass = GetWeakReference(archetype.uClass);
+			}
+			catch (const std::exception& error)
+			{
+				Log::GetLog()->error(error.what());
+			}
+		}
 
 		////Noglin Buff Cache Controlled Player
-		//if (config["General"].value("PreventUseNoglin", true) && !NoglinBuffClass2)
-		//{
-		//	try
-		//	{
-		//		FString buffClassString = "Blueprint'/Game/Genesis2/Dinos/BrainSlug/Buff_BrainSlug_HumanControl.Buff_BrainSlug_HumanControl'";
-		//		TSubclassOf<UObject> archetype;
-		//		UVictoryCore::StringReferenceToClass(&archetype, &buffClassString);
-		//		NoglinBuffClass2 = archetype.uClass;
-		//	}
-		//	catch (const std::exception& error)
-		//	{
-		//		Log::GetLog()->error(error.what());
-		//	}
-		//}
+		if (config["General"].value("PreventUseNoglin", true) && !NoglinBuffClass2.Get(false))
+		{
+			try
+			{
+				FString buffClassString = "Blueprint'/Game/Genesis2/Dinos/BrainSlug/Buff_BrainSlug_HumanControl.Buff_BrainSlug_HumanControl'";
+				TSubclassOf<UObject> archetype;
+				UVictoryCore::StringReferenceToClass(&archetype, &buffClassString);
+				NoglinBuffClass2 = GetWeakReference(archetype.uClass);
+			}
+			catch (const std::exception& error)
+			{
+				Log::GetLog()->error(error.what());
+			}
+		}
 
 		////Noglin Buff Cache Controlled Dino
-		//if (config["General"].value("PreventUseNoglin", true) && !NoglinBuffClass3)
-		//{
-		//	try
-		//	{
-		//		FString buffClassString = "Blueprint'/Game/Genesis2/Dinos/BrainSlug/Buff_BrainSlugControl.Buff_BrainSlugControl'";
-		//		TSubclassOf<UObject> archetype;
-		//		UVictoryCore::StringReferenceToClass(&archetype, &buffClassString);
-		//		NoglinBuffClass3 = archetype.uClass;
-		//	}
-		//	catch (const std::exception& error)
-		//	{
-		//		Log::GetLog()->error(error.what());
-		//	}
-		//}
+		if (config["General"].value("PreventUseNoglin", true) && !NoglinBuffClass3.Get(false))
+		{
+			try
+			{
+				FString buffClassString = "Blueprint'/Game/Genesis2/Dinos/BrainSlug/Buff_BrainSlugControl.Buff_BrainSlugControl'";
+				TSubclassOf<UObject> archetype;
+				UVictoryCore::StringReferenceToClass(&archetype, &buffClassString);
+				NoglinBuffClass3 = GetWeakReference(archetype.uClass);
+			}
+			catch (const std::exception& error)
+			{
+				Log::GetLog()->error(error.what());
+			}
+		}
 
-		/*if (!preventBuying && config["General"].value("PreventUseNoglin", true) && (character->HasBuff(NoglinBuffClass, true) || character->HasBuff(NoglinBuffClass2, true) || character->HasBuff(NoglinBuffClass3, true)))
-			preventBuying = true;*/
+		if (!preventBuying && config["General"].value("PreventUseNoglin", true) && (character->HasBuff(NoglinBuffClass.Get(false), true) || character->HasBuff(NoglinBuffClass2.Get(false), true) || character->HasBuff(NoglinBuffClass3.Get(false), true)))
+			preventBuying = true;
 
 		if (!preventBuying && config["General"].value("PreventUseUnconscious", true) && !character->IsConscious())
 			preventBuying = true;
@@ -600,35 +544,29 @@ bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlay
 			FString::Format("Points_{}", eos_id.ToString()), eos_id, [eos_id]()
 			{
 				auto groups_map = ArkShop::config["General"]["TimedPointsReward"]["Groups"];
-
 				const bool stack_rewards = ArkShop::config["General"]["TimedPointsReward"].value("StackRewards", false);
+				auto player_groups = Permissions::GetPlayerGroups(eos_id);
 
 				int high_points_amount = 0;
 				for (auto group_iter = groups_map.begin(); group_iter != groups_map.end(); ++group_iter)
 				{
 					const FString group_name(group_iter.key().c_str());
-					if (Permissions::IsPlayerInGroup(eos_id, group_name))
+					if (player_groups.Contains(group_name))
 					{
 						int points_amount = group_iter.value().value("Amount", 0);
 
-						if (!stack_rewards)
-						{
-							if (points_amount > high_points_amount)
-							{
-								high_points_amount = points_amount;
-							}
-						}
+						if (stack_rewards)
+							high_points_amount += points_amount;
 						else
 						{
-							high_points_amount += points_amount;
+							if (points_amount > high_points_amount)
+								high_points_amount = points_amount;
 						}
 					}
 				}
 
 				if (high_points_amount <= 0)
-				{
 					return;
-				}
 
 				ArkShop::Points::AddPoints(high_points_amount, eos_id);
 			},
