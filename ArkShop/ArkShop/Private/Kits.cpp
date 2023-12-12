@@ -256,7 +256,9 @@ namespace ArkShop::Kits
 			const bool exec_as_admin = command_entry.value("ExecuteAsAdmin", false);
 
 			FString fcommand = fmt::format(
-				command, fmt::arg("eosid", eos_id.ToString()),
+				command, 
+				fmt::arg("eosid", eos_id.ToString()),
+				fmt::arg("eos_id", eos_id.ToString()),
 				fmt::arg("playerid", AsaApi::GetApiUtils().GetPlayerID(player_controller)),
 				fmt::arg("tribeid", AsaApi::GetApiUtils().GetTribeID(player_controller))
 			).c_str();
