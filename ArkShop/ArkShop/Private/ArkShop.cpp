@@ -565,7 +565,7 @@ bool Hook_AShooterGameMode_HandleNewPlayer(AShooterGameMode* _this, AShooterPlay
 					}
 				}
 
-				if (high_points_amount <= 0)
+				if (high_points_amount <= 0 && !ArkShop::config.value("General", nlohmann::json::object()).value("TimedPointsReward", nlohmann::json::object()).value("AlwaysSendNotifications", false))
 					return;
 
 				ArkShop::Points::AddPoints(high_points_amount, eos_id);
