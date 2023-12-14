@@ -17,6 +17,7 @@
       "Enabled": true,
       "Interval": 5,
       "StackRewards": false,
+      "AlwaysSendNotifications":  false,
       "Groups": {
         "Default": {
           "Amount": 5
@@ -350,6 +351,7 @@
     "BoughtBeacon": "<RichColor Color=\"0, 1, 0, 1\">You have successfully bought beacon</>",
     "BoughtExp": "<RichColor Color=\"0, 1, 0, 1\">You have successfully bought experience</>",
     "ReceivedPoints": "<RichColor Color=\"1, 1, 0, 1\">You have received {0} points! (total: {1})</>",
+    "ReceivedNoPoints": "<RichColor Color=\"1, 1, 0, 1\">You have received no points!</>",
     "HavePoints": "You have {0} points",
     "NoPoints": "<RichColor Color=\"1, 0, 0, 1\">You don't have enough points</>",
     "WrongId": "<RichColor Color=\"1, 0, 0, 1\">Wrong id</>",

@@ -11,7 +11,16 @@ namespace ArkShop::Points
 	bool AddPoints(int amount, const FString& eos_id)
 	{
 		if (amount <= 0)
+		{
+			if (config.value("General", nlohmann::json::object()).value("TimedPointsReward", nlohmann::json::object()).value("AlwaysSendNotifications", false))
+			{
+				AShooterPlayerController* player = AsaApi::GetApiUtils().FindPlayerFromEOSID(eos_id);
+				if (player != nullptr)
+					AsaApi::GetApiUtils().SendChatMessage(player, GetText("Sender"), *GetText("ReceivedNoPoints"));
+			}
+
 			return false;
+		}
 
 		const bool is_added = database->AddPoints(eos_id, amount);
 		if (!is_added)
@@ -128,6 +137,12 @@ namespace ArkShop::Points
 			}
 			else
 				receiver_eos_id = AsaApi::IApiUtils::GetEOSIDFromController(receiver_player);
+
+			if (GetPoints(sender_eos_id) < amount)
+			{
+				AsaApi::GetApiUtils().SendChatMessage(player_controller, GetText("Sender"), *GetText("NoPoints"));
+				return;
+			}
 
 			if (receiver_eos_id == sender_eos_id)
 			{
