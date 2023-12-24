@@ -331,7 +331,7 @@ namespace ArkShop::Store
 		{
 			amount = 1;
 		}
-
+		if (amount > 1000)return;
 		bool success = false;
 
 		const FString& eos_id = AsaApi::IApiUtils::GetEOSIDFromController(player_controller);

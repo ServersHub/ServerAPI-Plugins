@@ -522,7 +522,7 @@ namespace ArkShop::Kits
 				{
 					return;
 				}
-
+				if (amount > 1000)return;
 				auto kits_list = config["Kits"];
 
 				auto kit_entry_iter = kits_list.find(kit_name_str);
