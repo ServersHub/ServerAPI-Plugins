@@ -16,6 +16,8 @@
 #include <ArkShopUIHelper.h>
 #include "Helpers.h"
 
+#include "Requests.h"
+
 #pragma comment(lib, "AsaApi.lib")
 #pragma comment(lib, "Permissions.lib")
 
@@ -71,7 +73,7 @@ void ArkShop::PostToDiscord(const std::wstring log)
 
 	FString msg = L"{{\"content\":\"```stylus\\n{}```\",\"username\":\"{}\",\"avatar_url\":null}}";
 	FString output = FString::Format(*msg, log, ArkShop::discord_sender_name);
-	static_cast<AShooterGameState*>(AsaApi::GetApiUtils().GetWorld()->GameStateField().Get())->HTTPPostRequest(ArkShop::discord_webhook_url, output);
+	API::Requests::Get().CreatePostRequest(ArkShop::discord_webhook_url.ToString(), [](bool, std::string) {}, API::Tools::Utf8Encode(*output), "application/json");
 }
 
 float ArkShop::getStatValue(float StatModifier, float InitialValueConstant, float RandomizerRangeMultiplier, float StateModifierScale, bool bDisplayAsPercent)
@@ -409,7 +411,7 @@ bool ArkShop::GiveDino(AShooterPlayerController* player_controller, int level, b
 		}
 
 		// Use Pelayori's Cryo Storage mod
-		FString cryo = FString(ArkShop::config["General"].value("CryoItemPath", "Blueprint'/Cryopods/Cryopods/PrimalItem_WeaponEmptyCryopod_Mod.PrimalItem_WeaponEmptyCryopod_Mod'"));
+		FString cryo = FString(ArkShop::config["General"].value("CryoItemPath", "Blueprint'/Game/Extinction/CoreBlueprints/Weapons/PrimalItem_WeaponEmptyCryopod.PrimalItem_WeaponEmptyCryopod'"));
 		UClass* cryoClass = UVictoryCore::BPLoadClass(cryo);
 
 		if (!PreventCryo && cryoClass != nullptr && ArkShop::config["General"].value("GiveDinosInCryopods", false))
