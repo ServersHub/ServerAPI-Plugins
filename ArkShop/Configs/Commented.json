@@ -16,6 +16,7 @@
     "TimedPointsReward": {
       "Enabled": true, //If true player will receive points based on how much time they play for
       "StackRewards": false, //If true player will receive the sum of all the rewards of the groups he's in.
+      "AlwaysSendNotifications": false, //true will send notifications even when points are 0 or less (these are just notifications) //false will only send notifications if they actually receive points
       "Interval": 30,
       "Groups": {
         "Donator-Diamond": { //Permission group name
@@ -356,6 +357,7 @@
     "BoughtBeacon": "<RichColor Color=\"0, 1, 0, 1\">You have successfully bought beacon</>",
     "BoughtExp": "<RichColor Color=\"0, 1, 0, 1\">You have successfully bought experience</>",
     "ReceivedPoints": "<RichColor Color=\"1, 1, 0, 1\">You have received {0} points! (total: {1})</>",
+    "ReceivedNoPoints": "<RichColor Color=\"1, 1, 0, 1\">You are not earning points currently!</>",
     "HavePoints": "You have {0} points",
     "NoPoints": "<RichColor Color=\"1, 0, 0, 1\">You don't have enough points</>",
     "WrongId": "<RichColor Color=\"1, 0, 0, 1\">Wrong id</>",

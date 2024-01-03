@@ -545,9 +545,7 @@ namespace ArkShop::Kits
 
 				const int final_price = price * amount;
 				if (final_price <= 0)
-				{
 					return;
-				}
 
 				if (Points::GetPoints(eos_id) >= final_price && Points::SpendPoints(final_price, eos_id))
 				{
@@ -557,11 +555,12 @@ namespace ArkShop::Kits
 						*GetText("BoughtKit"), *kit_name);
 
 					// Log
-					const std::wstring log = fmt::format(TEXT("[{}] {}({}) Bought kit: '{}' Amount: {}"),
+					const std::wstring log = fmt::format(TEXT("[{}] {}({}) Bought kit: '{}' Amount: {} Total Spent Points: {}"),
 						*ArkShop::SetMapName(),
 						*AsaApi::IApiUtils::GetSteamName(player_controller), eos_id.ToString(),
 						*kit_name,
-						amount);
+						amount,
+						final_price);
 
 					ShopLog::GetLog()->info(AsaApi::Tools::Utf8Encode(log));
 					ArkShop::PostToDiscord(log);

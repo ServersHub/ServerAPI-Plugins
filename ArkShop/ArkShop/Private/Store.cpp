@@ -395,9 +395,13 @@ namespace ArkShop::Store
 				return false;
 			}
 
+			const unsigned price = item_entry["Price"];
+			int final_price = price;
 			if (type == "item")
 			{
 				success = BuyItem(player_controller, item_entry, eos_id, amount);
+				if (success)
+					final_price = price * amount;
 			}
 			else if (type == "dino")
 			{
@@ -422,9 +426,6 @@ namespace ArkShop::Store
 
 			if (success)
 			{
-				const unsigned price = item_entry["Price"];
-				const int final_price = price * amount;
-
 				const std::wstring log = fmt::format(TEXT("[{}] {}({}) Bought item: '{}' Amount: {} Total Spent Points: {}"),
 					*ArkShop::SetMapName(),
 					*AsaApi::IApiUtils::GetSteamName(player_controller),

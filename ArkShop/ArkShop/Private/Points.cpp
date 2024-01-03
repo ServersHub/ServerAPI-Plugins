@@ -11,7 +11,16 @@ namespace ArkShop::Points
 	bool AddPoints(int amount, const FString& eos_id)
 	{
 		if (amount <= 0)
+		{
+			if (config.value("General", nlohmann::json::object()).value("TimedPointsReward", nlohmann::json::object()).value("AlwaysSendNotifications", false))
+			{
+				AShooterPlayerController* player = AsaApi::GetApiUtils().FindPlayerFromEOSID(eos_id);
+				if (player != nullptr)
+					AsaApi::GetApiUtils().SendChatMessage(player, GetText("Sender"), *GetText("ReceivedNoPoints"));
+			}
+
 			return false;
+		}
 
 		const bool is_added = database->AddPoints(eos_id, amount);
 		if (!is_added)
@@ -76,154 +85,106 @@ namespace ArkShop::Points
 		if (DBHelper::IsPlayerExists(sender_eos_id))
 		{
 			TArray<FString> parsed;
+			FString in_param = ""; //CharacterName or EOSID
+			int amount = 0;
+			AShooterPlayerController* receiver_player = nullptr;
+			FString receiver_eos_id = "";
+
+			message->ParseIntoArray(parsed, L" ", true);
+			if (parsed.IsValidIndex(2) == false)
+			{
+				AsaApi::GetApiUtils().SendChatMessage(player_controller, GetText("Sender"), *GetText("TradeSyntax"));
+				return;
+			}
+
+			try
+			{
+				in_param = parsed[1];
+				amount = std::stoi(*parsed[2]);
+			}
+			catch (const std::exception& exception)
+			{
+				Log::GetLog()->error("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
+				return;
+			}
+
 			if (AsaApi::Tools::IsPluginLoaded("ArkShopUI") && !config["General"].value("UseOriginalTradeCommandWithUI", false))
 			{
-				message->ParseIntoArray(parsed, L" ", true);
-
-				if (parsed.IsValidIndex(2))
-				{
-					FString receiver_eos_id;
-					int amount;
-
-					try
-					{
-						receiver_eos_id = *parsed[1];
-						amount = std::stoi(*parsed[2]);
-					}
-					catch (const std::exception& exception)
-					{
-						Log::GetLog()->error("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
-						return;
-					}
-
-					if (amount <= 0)
-					{
-						return;
-					}
-
-					if (GetPoints(sender_eos_id) < amount)
-					{
-						AsaApi::GetApiUtils().SendChatMessage(player_controller, GetText("Sender"),
-							*GetText("NoPoints"));
-						return;
-					}
-
-					if (receiver_eos_id == sender_eos_id)
-					{
-						AsaApi::GetApiUtils().SendChatMessage(player_controller, GetText("Sender"),
-							*GetText("CantGivePoints"));
-						return;
-					}
-
-					if (DBHelper::IsPlayerExists(receiver_eos_id) && SpendPoints(amount, sender_eos_id) && AddPoints(
-						amount, receiver_eos_id))
-					{
-						AShooterPlayerController* receiver_player = AsaApi::GetApiUtils().FindPlayerFromEOSID(receiver_eos_id);
-						FString receiver_name = AsaApi::GetApiUtils().GetCharacterName(receiver_player);
-
-						AsaApi::GetApiUtils().SendChatMessage(player_controller, GetText("Sender"),
-							*GetText("SentPoints"), amount, *receiver_name);
-
-						const FString sender_name = AsaApi::IApiUtils::GetCharacterName(player_controller);
-
-						AsaApi::GetApiUtils().SendChatMessage(receiver_player, GetText("Sender"),
-							*GetText("GotPoints"), amount, *sender_name);
-
-						const std::wstring log = fmt::format(TEXT("[{}] {}({}) Traded points with: {}({}) Amount: {}"),
-							*ArkShop::SetMapName(),
-							*AsaApi::IApiUtils::GetSteamName(player_controller), sender_eos_id.ToString(),
-							*AsaApi::IApiUtils::GetSteamName(receiver_player), receiver_eos_id.ToString(),
-							amount);
-
-						ShopLog::GetLog()->info(AsaApi::Tools::Utf8Encode(log));
-						ArkShop::PostToDiscord(log);
-					}
-				}
+				receiver_player = AsaApi::GetApiUtils().FindPlayerFromEOSID(in_param);
 			}
 			else
 			{
-				message->ParseIntoArray(parsed, L"'", true);
-
-				if (parsed.IsValidIndex(2))
+				TArray<AShooterPlayerController*> receiver_players = AsaApi::GetApiUtils().FindPlayerFromCharacterName(in_param, ESearchCase::IgnoreCase, false);
+				if (receiver_players.Num() > 1)
 				{
-					const FString receiver_name = parsed[1];
-
-					int amount;
-
-					try
-					{
-						amount = std::stoi(*parsed[2]);
-					}
-					catch (const std::exception& exception)
-					{
-						Log::GetLog()->error("({} {}) Parsing error {}", __FILE__, __FUNCTION__, exception.what());
-						return;
-					}
-
-					if (amount <= 0)
-					{
-						return;
-					}
-
-					if (GetPoints(sender_eos_id) < amount)
-					{
-						AsaApi::GetApiUtils().SendChatMessage(player_controller, GetText("Sender"),
-							*GetText("NoPoints"));
-						return;
-					}
-
-					TArray<AShooterPlayerController*> receiver_players = AsaApi::GetApiUtils().
-						FindPlayerFromCharacterName(receiver_name, ESearchCase::IgnoreCase, false);
-
-					if (receiver_players.Num() > 1)
-					{
-						AsaApi::GetApiUtils().SendChatMessage(player_controller, GetText("Sender"),
-							*GetText("FoundMorePlayers"));
-						return;
-					}
-
-					if (receiver_players.Num() < 1)
-					{
-						AsaApi::GetApiUtils().SendChatMessage(player_controller, GetText("Sender"),
-							*GetText("NoPlayer"));
-						return;
-					}
-
-					AShooterPlayerController* receiver_player = receiver_players[0];
-
-					const FString& receiver_eos_id = AsaApi::IApiUtils::GetEOSIDFromController(receiver_player);
-					if (receiver_eos_id == sender_eos_id)
-					{
-						AsaApi::GetApiUtils().SendChatMessage(player_controller, GetText("Sender"),
-							*GetText("CantGivePoints"));
-						return;
-					}
-
-					if (DBHelper::IsPlayerExists(receiver_eos_id) && SpendPoints(amount, sender_eos_id) && AddPoints(
-						amount, receiver_eos_id))
-					{
-						AsaApi::GetApiUtils().SendChatMessage(player_controller, GetText("Sender"),
-							*GetText("SentPoints"), amount, *receiver_name);
-
-						const FString sender_name = AsaApi::IApiUtils::GetCharacterName(player_controller);
-
-						AsaApi::GetApiUtils().SendChatMessage(receiver_player, GetText("Sender"),
-							*GetText("GotPoints"), amount, *sender_name);
-
-						const std::wstring log = fmt::format(TEXT("[{}] {}({}) Traded points with: {}({}) Amount: {}"),
-							*ArkShop::SetMapName(),
-							*AsaApi::IApiUtils::GetSteamName(player_controller), sender_eos_id.ToString(),
-							*AsaApi::IApiUtils::GetSteamName(receiver_player), receiver_eos_id.ToString(),
-							amount);
-
-						ShopLog::GetLog()->info(AsaApi::Tools::Utf8Encode(log));
-						ArkShop::PostToDiscord(log);
-					}
+					AsaApi::GetApiUtils().SendChatMessage(player_controller, GetText("Sender"), *GetText("FoundMorePlayers"));
+					return;
 				}
-				else
+
+				if (receiver_players.Num() < 1)
 				{
-					AsaApi::GetApiUtils().SendChatMessage(player_controller, GetText("Sender"),
-						*GetText("TradeUsage"));
+					AsaApi::GetApiUtils().SendChatMessage(player_controller, GetText("Sender"), *GetText("NoPlayer"));
+					return;
+				}
+
+				receiver_player = receiver_players[0];
+			}
+
+			if (receiver_player == nullptr)
+			{
+				AsaApi::GetApiUtils().SendChatMessage(player_controller, GetText("Sender"), *GetText("NoPlayer"));
+				return;
+			}
+			else
+				receiver_eos_id = AsaApi::IApiUtils::GetEOSIDFromController(receiver_player);
+
+			if (GetPoints(sender_eos_id) < amount)
+			{
+				AsaApi::GetApiUtils().SendChatMessage(player_controller, GetText("Sender"), *GetText("NoPoints"));
+				return;
+			}
+
+			if (receiver_eos_id == sender_eos_id)
+			{
+				AsaApi::GetApiUtils().SendChatMessage(player_controller, GetText("Sender"), *GetText("CantGivePoints"));
+				return;
+			}
+
+			if (DBHelper::IsPlayerExists(receiver_eos_id)==false)
+				database->TryAddNewPlayer(receiver_eos_id);
+
+			bool pointsSubtracted = SpendPoints(amount, sender_eos_id);
+			bool pointsAdded = AddPoints(amount, receiver_eos_id);
+
+			if (pointsSubtracted && pointsAdded)
+			{
+				FString receiver_name = AsaApi::GetApiUtils().GetCharacterName(receiver_player);
+				AsaApi::GetApiUtils().SendChatMessage(player_controller, GetText("Sender"), *GetText("SentPoints"), amount, *receiver_name);
+
+				const FString sender_name = AsaApi::IApiUtils::GetCharacterName(player_controller);
+				AsaApi::GetApiUtils().SendChatMessage(receiver_player, GetText("Sender"), *GetText("GotPoints"), amount, *sender_name);
+
+				const std::wstring log = fmt::format(TEXT("[{}] {}({}) Traded points with: {}({}) Amount: {}"),
+					*ArkShop::SetMapName(),
+					*AsaApi::IApiUtils::GetSteamName(player_controller), sender_eos_id.ToString(),
+					*AsaApi::IApiUtils::GetSteamName(receiver_player), receiver_eos_id.ToString(),
+					amount);
+
+				ShopLog::GetLog()->info(AsaApi::Tools::Utf8Encode(log));
+				ArkShop::PostToDiscord(log);
+			}
+			else //if one of the operations failed, try to revert the other one
+			{
+				if (pointsSubtracted == true) //undo the transaction
+				{
+					AddPoints(amount, sender_eos_id);
+					AsaApi::GetApiUtils().SendChatMessage(player_controller, GetText("Sender"), *GetText("RefundError"));
+				}
+				
+				if (pointsAdded == true) //undo the transaction
+				{
+					SpendPoints(amount, receiver_eos_id);
+					AsaApi::GetApiUtils().SendChatMessage(receiver_player, GetText("Sender"), *GetText("RefundError"));
 				}
 			}
 		}
